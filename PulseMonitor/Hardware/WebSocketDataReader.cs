@@ -20,6 +20,7 @@ public sealed class WebSocketDataReader : ISampleDataReader
   public event EventHandler<IRSample>? RawSampleReceived;
   public event EventHandler<bool>? ConnectionStateChanged;
   public event EventHandler<AiDiagnosticResult>? AiDiagnosticReceived;
+  public event EventHandler<string>? DiagnosticLog;
 
   public bool IsRunning => _isRunning;
   public string Name => $"WebSocket:{_serverUri}";

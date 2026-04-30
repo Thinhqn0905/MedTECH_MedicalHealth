@@ -214,6 +214,21 @@ public partial class MainViewModel : ObservableObject
 
     try
     {
+      // 1. Request Runtime Permissions (Mandatory for BLE scanning)
+      PermissionStatus status = await Permissions.RequestAsync<Permissions.Bluetooth>().ConfigureAwait(true);
+      if (status != PermissionStatus.Granted)
+      {
+        AddLog("Bluetooth permissions denied.");
+        return;
+      }
+
+      PermissionStatus locStatus = await Permissions.RequestAsync<Permissions.LocationWhenInUse>().ConfigureAwait(true);
+      if (locStatus != PermissionStatus.Granted)
+      {
+        AddLog("Location permission denied (required for BLE scan).");
+        return;
+      }
+
       if (_reader?.IsRunning == true)
       {
         await DisconnectReaderAsync().ConfigureAwait(false);
@@ -225,12 +240,16 @@ public partial class MainViewModel : ObservableObject
       ConnectionColor = "#007AFF";
 
       PulseMonitorSettings settings = PreferencesSettingsStore.Load();
-      settings.Hardware.ConnectionMode = "WebSocket";
-      PulseMonitorSettings settingsToSave = settings;
+      
       // ── CONNECTION GATEWAY ──
-      // Auto-detect environment: if on Android emulator, force 10.0.2.2 loopback
-      string wsUri = settingsToSave.Hardware.WebSocketUri;
+      // Default name for Board A if using BLE
+      if (settings.Hardware.ConnectionMode == "Ble")
+      {
+          settings.Hardware.BleDeviceName = "PulseMonitor_PPG";
+      }
+
 #if ANDROID
+      string wsUri = settings.Hardware.WebSocketUri;
       if (wsUri.Contains("192.168.") || wsUri.Contains("10.122."))
       {
         // On emulator, the host machine is at 10.0.2.2
@@ -242,23 +261,26 @@ public partial class MainViewModel : ObservableObject
           Uri parsed = new(wsUri);
           wsUri = $"ws://10.0.2.2:{parsed.Port}";
           AddLog($"Emulator detected → {wsUri}");
-          settingsToSave.Hardware.ConnectionMode = "WebSocket"; // Force WS on emulator
+          // Force WebSocket mode when on emulator since BLE isn't supported there
+          settings.Hardware.ConnectionMode = "WebSocket"; 
+          settings.Hardware.WebSocketUri = wsUri;
         }
       }
 #endif
-      settingsToSave.Hardware.WebSocketUri = wsUri;
 
-      _connectionManager = new ConnectionManager(settingsToSave.Hardware);
-      
-      using CancellationTokenSource cts = new();
-      cts.CancelAfter(TimeSpan.FromSeconds(3));
-      
-      _reader = await _connectionManager.ConnectAsync(cts.Token).ConfigureAwait(false);
-      
+      _connectionManager = new ConnectionManager(settings.Hardware);
+      _reader = new BleReader(settings.Hardware.BleDeviceName);
+
       _reader.RawSampleReceived     += OnRawSampleReceived;
       _reader.ConnectionStateChanged += OnConnectionStateChanged;
       _reader.AiDiagnosticReceived  += OnAiDiagnosticReceived;
       _reader.DiagnosticLog         += (s, msg) => AddBoardLog(0, msg);
+
+      using CancellationTokenSource cts = new();
+      cts.CancelAfter(TimeSpan.FromSeconds(15));
+      
+      _reader.DiagnosticLog         += (s, msg) => AddBoardLog(0, msg);
+      await _reader.StartAsync(cts.Token).ConfigureAwait(false);
 
       MainThread.BeginInvokeOnMainThread(() =>
       {
@@ -484,18 +506,37 @@ public partial class MainViewModel : ObservableObject
 
       if (exportSamples.Count == 0)
       {
+        await Shell.Current.DisplayAlert("Export", "No recorded samples available. Please record some data first.", "OK");
         AddLog("No recorded samples available. Start recording first.");
         return;
       }
 
       PulseMonitorSettings settings = PreferencesSettingsStore.Load();
+      
+      // Simple validation check before jumping into the exporter
+      if (string.IsNullOrWhiteSpace(settings.Smtp.Host) || string.IsNullOrWhiteSpace(settings.Smtp.User))
+      {
+        await Shell.Current.DisplayAlert("Settings Required", "Please configure your SMTP settings in the Settings page first.", "OK");
+        return;
+      }
+
+      AddLog("Preparing email export...");
       EmailExporter emailExporter = new(settings.Smtp);
       string csvPath = await emailExporter.ExportSessionAsync(exportSamples).ConfigureAwait(false);
+      
+      MainThread.BeginInvokeOnMainThread(async () => {
+          await Shell.Current.DisplayAlert("Success", $"Session exported and emailed successfully.\nFile: {Path.GetFileName(csvPath)}", "OK");
+      });
+      
       AddLog($"Session exported and emailed. CSV: {csvPath}");
     }
     catch (Exception ex)
     {
-      AddLog($"Email export failed: {ex.Message}");
+      string error = $"Email export failed: {ex.Message}";
+      AddLog(error);
+      MainThread.BeginInvokeOnMainThread(async () => {
+          await Shell.Current.DisplayAlert("Export Error", ex.Message, "OK");
+      });
     }
     finally
     {
@@ -516,6 +557,7 @@ public partial class MainViewModel : ObservableObject
 
       if (exportSamples.Count == 0)
       {
+        await Shell.Current.DisplayAlert("Export", "No recorded samples available. Please record some data first.", "OK");
         AddLog("No recorded samples available. Start recording first.");
         return;
       }
@@ -525,6 +567,9 @@ public partial class MainViewModel : ObservableObject
       if (result.IsSuccessful)
       {
         AddLog($"Session saved: {result.FilePath}");
+        MainThread.BeginInvokeOnMainThread(async () => {
+            await Shell.Current.DisplayAlert("Success", $"Session saved successfully.\nPath: {result.FilePath}", "OK");
+        });
       }
       else
       {
@@ -533,7 +578,11 @@ public partial class MainViewModel : ObservableObject
     }
     catch (Exception ex)
     {
-      AddLog($"Local export failed: {ex.Message}");
+      string error = $"Local export failed: {ex.Message}";
+      AddLog(error);
+      MainThread.BeginInvokeOnMainThread(async () => {
+          await Shell.Current.DisplayAlert("Export Error", ex.Message, "OK");
+      });
     }
     finally
     {
@@ -573,15 +622,9 @@ public partial class MainViewModel : ObservableObject
     _latestSpO2 = spO2;
 
     // RR intervals for AI diagnostics (background computation)
-    if (bpm > 0 && bpm != _lastBpmForRrCalc)
+    if (_panTompkinsDetector.HasNewPeak)
     {
-      if (_lastPeakTimestampForHrv != long.MinValue)
-      {
-        long estimatedRr = (long)(60000.0 / bpm);
-        _aiDiagnosticsViewModel.OnRrInterval(estimatedRr);
-      }
-      _lastPeakTimestampForHrv = sample.Timestamp;
-      _lastBpmForRrCalc = bpm;
+      _aiDiagnosticsViewModel.OnRrInterval(_panTompkinsDetector.LastRrMs);
     }
 
     // Recording buffer (background, lock-protected)

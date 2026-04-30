@@ -27,8 +27,6 @@ public partial class DashboardContentView : ContentView
       _renderTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60fps
       _renderTimer.Tick += (s, e) => 
       {
-        GenerateFakeEcgDataForEmulator();
-        GenerateFakePpgDataForEmulator();
         EcgCanvas.InvalidateSurface(); 
         if (PpgCanvas != null) PpgCanvas.InvalidateSurface();
       };
@@ -39,33 +37,10 @@ public partial class DashboardContentView : ContentView
 
   private void GenerateFakeEcgDataForEmulator()
   {
-    // Feature removed to ensure only real data is displayed
   }
 
   private void GenerateFakePpgDataForEmulator()
   {
-    if (BindingContext is not MainViewModel vm) return;
-    
-    // Only generate fake data if not connected (for emulator benchmarking)
-    if (vm.ConnectionStatusText == "Disconnected")
-    {
-      // 16ms = ~1.6 samples at 100Hz
-      // We will add 2 samples per tick on average to simulate 100Hz
-      for (int i = 0; i < 2; i++)
-      {
-        float irWave = 4000f * (float)Math.Sin(_fakePpgPhase - 0.1f) + 1200f * (float)Math.Sin(2 * _fakePpgPhase + 0.4f);
-        float redWave = 3000f * (float)Math.Sin(_fakePpgPhase) + 800f * (float)Math.Sin(2 * _fakePpgPhase + 0.5f);
-        
-        float valIr = 90000f + irWave;
-        float valRed = 100000f + redWave;
-        
-        vm.PpgIrBuffer[vm.PpgHead] = valIr;
-        vm.PpgRedBuffer[vm.PpgHead] = valRed;
-        vm.PpgHead = (vm.PpgHead + 1) % vm.PpgIrBuffer.Length;
-        
-        _fakePpgPhase += 0.08f;
-      }
-    }
   }
 
   private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)

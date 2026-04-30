@@ -1,7 +1,18 @@
 .pio/build/esp32s3/src/ble_manager.cpp.o: src/ble_manager.cpp \
- src/ble_manager.h src/hrv_analyzer.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp_arduino_version.h \
+ src/ble_manager.h .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEDevice.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/qio_qspi/include/sdkconfig.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig_rename.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEScan.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAdvertisedDevice.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAddress.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/esp_port/port/include/esp_nimble_cfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/../syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_npl.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/nimble_npl_os.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/FreeRTOS.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/esp_additions/freertos/FreeRTOSConfig.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_common/include/esp_compiler.h \
@@ -67,12 +78,64 @@
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/xtensa/include/xtensa/xtensa_context.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/port/xtensa/include/freertos/portmacro_deprecated.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/mpu_wrappers.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/queue.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/task.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/list.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/esp_additions/freertos/task_snapshot.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/task.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/semphr.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/queue.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/task.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/timers.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/npl_freertos.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/endian.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/queue.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_error.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mbuf.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mempool.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEUUID.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_uuid.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_adv.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_uuid.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEUtils.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/hci_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_att.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/queue.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_eddystone.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gatt.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_adv.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_id.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_hci.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_log.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/modlog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log_common/log_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log_common/ignore.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log/log.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/log/include/esp_log.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/log/include/esp_log_internal.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/log/log.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/logcfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/../modlog/modlog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/../log_common/log_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_mbuf.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_stop.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_ibeacon.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_l2cap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt_auto.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_sm.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_store.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAdvertising.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEClient.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEConnInfo.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAttValue.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp_arduino_version.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_hw_support/include/esp_sleep.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/hal/include/hal/touch_sensor_types.h \
@@ -82,12 +145,9 @@
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/soc/esp32s3/include/soc/gpio_struct.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/soc/esp32s3/include/soc/gpio_reg.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/soc/esp32s3/include/soc/gpio_sig_map.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/queue.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/event_groups.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/timers.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-log.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/log/include/esp_log.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/log/include/esp_log_internal.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-matrix.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-uart.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/hal/include/hal/uart_types.h \
@@ -180,32 +240,18 @@
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_hw_support/include/soc/esp32/spiram.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEDevice.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLELog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/console/console.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteService.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteCharacteristic.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteDescriptor.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEServer.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEService.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLECharacteristic.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEDescriptor.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLE2904.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLESecurity.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/include/esp32c3/include/esp_bt.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEServer.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEUUID.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEAdvertising.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/RTOS.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_ringbuf/include/freertos/ringbuf.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLECharacteristic.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEDescriptor.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEValue.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEService.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLESecurity.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEAddress.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEClient.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLERemoteService.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLERemoteCharacteristic.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLERemoteDescriptor.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEAdvertisedDevice.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEScan.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEUtils.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEServer.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEUtils.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLE2902.h
+ src/hrv_analyzer.h

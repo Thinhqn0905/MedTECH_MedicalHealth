@@ -10,7 +10,7 @@ namespace PulseMonitor.Processing;
 /// </summary>
 public static class FftProcessor
 {
-  private const int    DftSize      = 64;
+  private const int    DftSize      = 256;
   private const double SampleRateHz = 4.0; // uniform resampling rate
 
   // Frequency band definitions (Hz)

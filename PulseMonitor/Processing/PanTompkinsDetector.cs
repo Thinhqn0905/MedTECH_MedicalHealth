@@ -24,17 +24,20 @@ public sealed class PanTompkinsDetector
   private int _statsCount;
   private double _integratedMean;
   private double _integratedVariance;
-  private int _lastBpm;
   private double _integratedSum;
+  public int  LastBpm        { get; private set; }
+  public long LastRrMs       { get; private set; }
+  public bool HasNewPeak     { get; private set; } // True only for one sample when a peak is found
 
   public int Update(IRSample sample)
   {
+    HasNewPeak = false; // Reset every sample
     if (!_isInitialized)
     {
       _baseline = sample.IR;
       _previousTimestamp = sample.Timestamp;
       _isInitialized = true;
-      return _lastBpm;
+      return LastBpm;
     }
 
     double raw = sample.IR;
@@ -68,7 +71,7 @@ public sealed class PanTompkinsDetector
     _previousIntegrated = integrated;
     _previousTimestamp = sample.Timestamp;
 
-    return _lastBpm;
+    return LastBpm;
   }
 
   private bool IsPeak(double currentIntegrated, double threshold)
@@ -86,6 +89,8 @@ public sealed class PanTompkinsDetector
       long rr = peakTimestamp - _lastPeakTimestamp;
       if (rr >= MinAcceptedRr && rr <= MaxAcceptedRr)
       {
+        LastRrMs = rr;
+        HasNewPeak = true;
         _rrIntervals.Enqueue(rr);
         if (_rrIntervals.Count > MaxRrIntervals)
         {
@@ -96,7 +101,7 @@ public sealed class PanTompkinsDetector
         if (meanRr > 0)
         {
           int bpm = (int)Math.Round(60000.0 / meanRr);
-          _lastBpm = Math.Clamp(bpm, 40, 220);
+          LastBpm = Math.Clamp(bpm, 40, 220);
         }
       }
     }

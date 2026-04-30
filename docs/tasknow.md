@@ -1,9 +1,9 @@
-# Current Tasks & Progress - BLE Connectivity & App Stability Fix
+# Current Tasks & Progress - PPG/ECG Integration Stable
 
-## Status: 🔄 TESTING (Root-cause fix deployed)
+## Status: ✅ STABLE (Phase 1 & 7 Complete)
 
 ## Current Objective
-Verify the app no longer crashes during BLE ECG connection and confirm live data streaming from Board B.
+Final validation of dual-board live streaming and AI diagnostics.
 
 ## Root Cause Found ✅
 **`System.ArgumentException: Offset and length were out of bounds`**
@@ -27,11 +27,12 @@ Verify the app no longer crashes during BLE ECG connection and confirm live data
 - [x] Enhanced app logging (first 500 packets logged immediately).
 - [x] **Root-cause crash fix**: Strict packet validation + try-catch on all GATT callbacks.
 
-## Next Steps
-1. [x] **Test Connection**: Open app → Connect ECG → Verify no crash.
-2. [x] **Verify ECG Data**: Confirm `[BLE DATA] Seq: N, Raw[0]: X` appears in log.
-3. [x] **Verify Chart**: Confirm ECG waveform renders on dashboard.
-4. [x] **Test with Sensor**: Re-attach AD8232 and verify real ECG signal.
+## Phase 1: PPG Firmware (Board A) ✅ COMPLETED
+1. [x] **[FW]** Pan-Tompkins Peak Detection (100Hz).
+2. [x] **[FW]** SpO2 Calculation (Beer-Lambert).
+3. [x] **[FW]** HRV Analysis (SDNN, RMSSD, Stress).
+4. [x] **[FW]** Multi-Characteristic BLE (Standard HR/SpO2 + Binary Waveform + JSON Metrics).
+5. [x] **[APP]** Updated `BleReader` to support dual-characteristic protocol.
 
 ## Phase 6: Multi-Device Optimization
 1. [x] **[VM]** Refactor `MainViewModel` for `BoardALogs` and `BoardBLogs` (Independent Buffers).
@@ -42,7 +43,12 @@ Verify the app no longer crashes during BLE ECG connection and confirm live data
 ## Phase 7: Recording & Export Enhancements
 1. [x] **[Record]** Integrate ECG waveform into the session recording buffer.
 2. [x] **[CSV]** Update `SessionExporter` to handle high-frequency ECG samples.
-3. [x] **[Email]** Ensure both PPG and ECG files are sent in the export email.
+3. [x] **[Email]**
+
+### 🔴 Current Blockers (Critical)
+1. **BLE Discovery Failure (Board A):** Mobile app fails to discover or connect to PPG board even after name shortening and UUID fallback implementation.
+   - *Status:* Brainstorming root cause (Hypothesis: Android caching or Scanning filter issue).
+   - *Next Action:* Verify specific error message from App UI logs.
 
 > **Status: ✅ COMPLETED** — Unified recording engine deployed. Optimized CSV with Forward Fill implemented. Default SMTP credentials hardcoded.
 

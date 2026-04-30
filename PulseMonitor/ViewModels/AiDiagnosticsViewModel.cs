@@ -11,7 +11,7 @@ namespace PulseMonitor.ViewModels;
 
 public partial class AiDiagnosticsViewModel : ObservableObject
 {
-  private const int MaxRrHistory = 64; // for FFT input
+  private const int MaxRrHistory = 256; // for FFT input (64 seconds at 4Hz)
 
   private readonly List<long> _rrHistory = [];
 

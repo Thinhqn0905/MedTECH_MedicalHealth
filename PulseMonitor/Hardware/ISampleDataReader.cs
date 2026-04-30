@@ -7,6 +7,7 @@ public interface ISampleDataReader : IAsyncDisposable
 
   /// <summary>Raised ~every 5 s when the firmware sends an HRV diagnostic packet.</summary>
   event EventHandler<AiDiagnosticResult>? AiDiagnosticReceived;
+  event EventHandler<string>? DiagnosticLog;
 
   bool IsRunning { get; }
   string Name { get; }
@@ -14,3 +15,4 @@ public interface ISampleDataReader : IAsyncDisposable
   Task StartAsync(CancellationToken cancellationToken = default);
   Task StopAsync();
 }
+ 

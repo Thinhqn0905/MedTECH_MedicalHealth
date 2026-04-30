@@ -179,10 +179,82 @@
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_hw_support/include/soc/esp32/spiram.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
+ src/ble_manager.h .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEDevice.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig_rename.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEScan.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAdvertisedDevice.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAddress.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/esp_port/port/include/esp_nimble_cfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/../syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_npl.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/nimble_npl_os.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/timers.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/npl/freertos/include/nimble/npl_freertos.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/endian.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/queue.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_error.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mbuf.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/os_mempool.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEUUID.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_uuid.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_adv.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_uuid.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEUtils.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/hci_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_att.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/os/queue.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_eddystone.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_gatt.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_adv.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_id.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/ble.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_hci.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_log.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/modlog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log_common/log_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log_common/ignore.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/modlog/../log/log.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/log/log.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/logcfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/../modlog/modlog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/logcfg/../log_common/log_common.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_mbuf.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs_stop.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_ibeacon.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_l2cap.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/include/nimble/nimble_opt_auto.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_sm.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_store.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAdvertising.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEClient.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEConnInfo.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEAttValue.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLELog.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/porting/nimble/include/syscfg/syscfg.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/console/console.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteService.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteCharacteristic.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLERemoteDescriptor.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEServer.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEService.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLECharacteristic.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimble/nimble/host/include/host/ble_hs.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEDescriptor.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLE2904.h \
+ .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLESecurity.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/include/esp32c3/include/esp_bt.h \
+ src/hrv_analyzer.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
  .pio/libdeps/esp32s3/SparkFun\ MAX3010x\ Pulse\ and\ Proximity\ Sensor\ Library/src/MAX30105.h \
- src/hrv_analyzer.h src/spo2_calculator.h src/ble_manager.h \
- .pio/libdeps/esp32s3/ArduinoJson/src/ArduinoJson.h \
- .pio/libdeps/esp32s3/ArduinoJson/src/ArduinoJson.hpp \
- .pio/libdeps/esp32s3/ArduinoJson/src/ArduinoJson/Configuration.hpp
+ src/peak_detector.h src/spo2_calculator.h

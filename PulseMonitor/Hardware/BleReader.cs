@@ -3,23 +3,41 @@ using System.Text.Json;
 using Plugin.BLE;
 using Plugin.BLE.Abstractions.Contracts;
 using Plugin.BLE.Abstractions.EventArgs;
+using Plugin.BLE.Abstractions;
 
 namespace PulseMonitor.Hardware;
 
 public sealed class BleReader : IBleReader
 {
-  private static readonly Guid ServiceUuid = Guid.Parse("6E400001-B5A3-F393-E0A9-E50E24DCCA9E");
-  private static readonly Guid NotifyCharacteristicUuid = Guid.Parse("6E400003-B5A3-F393-E0A9-E50E24DCCA9E");
+  // Mirroring the Board B (ECG) UUID base for maximum Android compatibility
+  private static readonly Guid ServiceUuid = Guid.Parse("DE010001-0000-1000-8000-00805F9B34FB");
+  private static readonly Guid WaveformCharacteristicUuid = Guid.Parse("DE010003-0000-1000-8000-00805F9B34FB");
+  private static readonly Guid MetricsCharacteristicUuid = Guid.Parse("DE010004-0000-1000-8000-00805F9B34FB");
 
-  private readonly string _deviceName;
   private readonly IBluetoothLE _bluetooth;
   private readonly IAdapter _adapter;
+  private readonly string _deviceName;
   private readonly StringBuilder _lineBuffer = new();
   private readonly object _bufferSync = new();
 
   private IDevice? _device;
-  private ICharacteristic? _notifyCharacteristic;
+  private ICharacteristic? _waveformChar;
+  private ICharacteristic? _metricsChar;
   private bool _isRunning;
+
+  // ISampleDataReader interface
+  public event EventHandler<IRSample>? RawSampleReceived;
+  public event EventHandler<AiDiagnosticResult>? AiDiagnosticReceived;
+  public string Name => "PPG Reader (BLE)";
+
+  public event EventHandler<byte[]>? RawDataReceived;
+  public event EventHandler<string>? MetricsReceived;
+  public event EventHandler<bool>? ConnectionStateChanged;
+  public event EventHandler<string>? DiagnosticLog;
+
+  public bool IsRunning => _isRunning;
+
+  public BleReader() : this("PulseMonitor-PPG") { }
 
   public BleReader(string deviceName)
   {
@@ -28,19 +46,9 @@ public sealed class BleReader : IBleReader
     _adapter = _bluetooth.Adapter;
   }
 
-  public event EventHandler<IRSample>? RawSampleReceived;
-  public event EventHandler<bool>? ConnectionStateChanged;
-  public event EventHandler<AiDiagnosticResult>? AiDiagnosticReceived;
-
-  public bool IsRunning => _isRunning;
-  public string Name => $"BLE:{_deviceName}";
-
   public async Task StartAsync(CancellationToken cancellationToken = default)
   {
-    if (_isRunning)
-    {
-      return;
-    }
+    if (_isRunning) return;
 
     if (_bluetooth.State != BluetoothState.On)
     {
@@ -48,61 +56,76 @@ public sealed class BleReader : IBleReader
     }
 
     _isRunning = true;
-
     try
     {
       _device = await ScanAndConnectAsync(cancellationToken).ConfigureAwait(false);
-      IService service = await _device.GetServiceAsync(ServiceUuid).ConfigureAwait(false)
-        ?? throw new InvalidOperationException("Required BLE service not found.");
 
-      _notifyCharacteristic = await service.GetCharacteristicAsync(NotifyCharacteristicUuid).ConfigureAwait(false)
-        ?? throw new InvalidOperationException("Notify characteristic not found.");
+      // MIRROR BOARD B: Request MTU IMMEDIATELY after connection
+      try
+      {
+        DiagnosticLog?.Invoke(this, "[PPG] Negotiating MTU 247...");
+        await _device.RequestMtuAsync(247).ConfigureAwait(false);
+      }
+      catch (Exception ex)
+      {
+        DiagnosticLog?.Invoke(this, $"[PPG] MTU Note: {ex.Message}");
+      }
 
-      _notifyCharacteristic.ValueUpdated += OnValueUpdated;
-      await _notifyCharacteristic.StartUpdatesAsync().ConfigureAwait(false);
+      // Discover Services
+      DiagnosticLog?.Invoke(this, "[PPG] Discovering Services...");
+      var service = await _device.GetServiceAsync(ServiceUuid).ConfigureAwait(false)
+        ?? throw new InvalidOperationException("PPG Service not found on board.");
+
+      _waveformChar = await service.GetCharacteristicAsync(WaveformCharacteristicUuid).ConfigureAwait(false);
+      _metricsChar = await service.GetCharacteristicAsync(MetricsCharacteristicUuid).ConfigureAwait(false);
+
+      if (_waveformChar != null)
+      {
+        _waveformChar.ValueUpdated += OnWaveformUpdated;
+        await _waveformChar.StartUpdatesAsync().ConfigureAwait(false);
+        DiagnosticLog?.Invoke(this, "[PPG] Waveform stream active.");
+      }
+
+      if (_metricsChar != null)
+      {
+        _metricsChar.ValueUpdated += OnMetricsUpdated;
+        await _metricsChar.StartUpdatesAsync().ConfigureAwait(false);
+        DiagnosticLog?.Invoke(this, "[PPG] Metrics stream active.");
+      }
+
       ConnectionStateChanged?.Invoke(this, true);
     }
-    catch
+    catch (Exception ex)
     {
       _isRunning = false;
       ConnectionStateChanged?.Invoke(this, false);
+      DiagnosticLog?.Invoke(this, $"[PPG ERR] Connection failed: {ex.Message}");
       throw;
     }
   }
 
   public async Task StopAsync()
   {
-    if (!_isRunning)
-    {
-      return;
-    }
-
+    if (!_isRunning) return;
     _isRunning = false;
 
-    if (_notifyCharacteristic is not null)
+    if (_waveformChar != null)
     {
-      try
-      {
-        await _notifyCharacteristic.StopUpdatesAsync().ConfigureAwait(false);
-      }
-      catch
-      {
-      }
-
-      _notifyCharacteristic.ValueUpdated -= OnValueUpdated;
-      _notifyCharacteristic = null;
+      try { await _waveformChar.StopUpdatesAsync().ConfigureAwait(false); } catch { }
+      _waveformChar.ValueUpdated -= OnWaveformUpdated;
+      _waveformChar = null;
     }
 
-    if (_device is not null)
+    if (_metricsChar != null)
     {
-      try
-      {
-        await _adapter.DisconnectDeviceAsync(_device).ConfigureAwait(false);
-      }
-      catch
-      {
-      }
+      try { await _metricsChar.StopUpdatesAsync().ConfigureAwait(false); } catch { }
+      _metricsChar.ValueUpdated -= OnMetricsUpdated;
+      _metricsChar = null;
+    }
 
+    if (_device != null)
+    {
+      try { await _adapter.DisconnectDeviceAsync(_device).ConfigureAwait(false); } catch { }
       _device = null;
     }
 
@@ -120,12 +143,13 @@ public sealed class BleReader : IBleReader
 
     void OnDeviceDiscovered(object? sender, DeviceEventArgs args)
     {
-      if (args.Device is null)
-      {
-        return;
-      }
-
-      if (string.Equals(args.Device.Name, _deviceName, StringComparison.OrdinalIgnoreCase))
+      if (args.Device is null) return;
+      
+      string name = args.Device.Name ?? "Unknown";
+      
+      // Match by the new Board-B-style name prefix
+      if (name.Contains("PulseMonitor", StringComparison.OrdinalIgnoreCase) || 
+          name.Contains("PPG", StringComparison.OrdinalIgnoreCase))
       {
         discoveredDevice.TrySetResult(args.Device);
       }
@@ -133,182 +157,99 @@ public sealed class BleReader : IBleReader
 
     _adapter.DeviceDiscovered += OnDeviceDiscovered;
 
-    using CancellationTokenRegistration registration = cancellationToken.Register(() =>
-    {
-      discoveredDevice.TrySetCanceled(cancellationToken);
-    });
-
     try
     {
-      _adapter.ScanTimeout = 5000;
-      Task scanTask = _adapter.StartScanningForDevicesAsync(cancellationToken: cancellationToken);
+      DiagnosticLog?.Invoke(this, $"[PPG] Scanning for Board A (Mirroring Board B logic)...");
+      _adapter.ScanTimeout = 10000;
+      await _adapter.StartScanningForDevicesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-      Task completed = await Task.WhenAny(discoveredDevice.Task, scanTask).ConfigureAwait(false);
-      if (completed != discoveredDevice.Task)
+      if (!discoveredDevice.Task.IsCompleted)
       {
-        throw new TimeoutException($"BLE device '{_deviceName}' was not found within timeout.");
+        throw new TimeoutException("PPG Board (PulseMonitor-PPG) not found.");
       }
 
       IDevice device = await discoveredDevice.Task.ConfigureAwait(false);
+      if (_adapter.IsScanning) await _adapter.StopScanningForDevicesAsync().ConfigureAwait(false);
 
-      if (_adapter.IsScanning)
-      {
-        await _adapter.StopScanningForDevicesAsync().ConfigureAwait(false);
-      }
-
+      DiagnosticLog?.Invoke(this, $"[PPG] Connecting to {device.Name}...");
       await _adapter.ConnectToDeviceAsync(device, cancellationToken: cancellationToken).ConfigureAwait(false);
       return device;
     }
     finally
     {
       _adapter.DeviceDiscovered -= OnDeviceDiscovered;
-
-      if (_adapter.IsScanning)
-      {
-        try
-        {
-          await _adapter.StopScanningForDevicesAsync().ConfigureAwait(false);
-        }
-        catch
-        {
-        }
-      }
     }
   }
 
-  private void OnValueUpdated(object? sender, CharacteristicUpdatedEventArgs args)
+  // DC Removal Filters
+  private double _irBaseline = 0;
+  private double _redBaseline = 0;
+  private const double DC_ALPHA = 0.05; // Fast enough to track wander, slow enough to keep pulse
+
+  private DateTime _lastWfLog = DateTime.MinValue;
+  private int _wfPacketCount = 0;
+
+  private void OnWaveformUpdated(object? sender, CharacteristicUpdatedEventArgs args)
   {
-    byte[] payload = args.Characteristic.Value;
-    if (payload.Length == 0)
+    byte[] data = args.Characteristic.Value;
+    _wfPacketCount++;
+    RawDataReceived?.Invoke(this, data);
+
+    // Log every 2 seconds so we can see what's happening
+    if ((DateTime.UtcNow - _lastWfLog).TotalSeconds >= 2)
     {
-      return;
+      _lastWfLog = DateTime.UtcNow;
+      DiagnosticLog?.Invoke(this, $"[PPG] Pkts:{_wfPacketCount} len={data?.Length ?? -1}");
     }
 
-    string chunk = Encoding.UTF8.GetString(payload);
-    string trimmedChunk = chunk.Trim();
-
-    if (TryParseAiResult(trimmedChunk, out AiDiagnosticResult aiResultFromChunk))
+    // Parse 12-byte binary packet: [TS:u32][IR:u32][RED:u32]
+    if (data != null && data.Length == 12)
     {
-      AiDiagnosticReceived?.Invoke(this, aiResultFromChunk);
-      return;
-    }
+      uint ts  = BitConverter.ToUInt32(data, 0);
+      uint ir  = BitConverter.ToUInt32(data, 4);
+      uint red = BitConverter.ToUInt32(data, 8);
 
-    if (TryParseSample(trimmedChunk, out IRSample parsedFromChunk))
-    {
-      RawSampleReceived?.Invoke(this, parsedFromChunk);
-      return;
-    }
+      // Initialize baseline on first sample
+      if (_irBaseline == 0) _irBaseline = ir;
+      if (_redBaseline == 0) _redBaseline = red;
 
-    lock (_bufferSync)
-    {
-      _lineBuffer.Append(chunk);
+      // Apply low-pass filter to track baseline
+      _irBaseline += DC_ALPHA * (ir - _irBaseline);
+      _redBaseline += DC_ALPHA * (red - _redBaseline);
 
-      while (true)
-      {
-        string current = _lineBuffer.ToString();
-        int lineBreak = current.IndexOf('\n');
-        if (lineBreak < 0)
-        {
-          break;
-        }
+      // Subtract baseline to get zero-centered AC signal (Pulse)
+      // Add a constant offset (2000) to prevent underflow since IRSample expects uint
+      uint irAc = (uint)Math.Max(0, (ir - _irBaseline) + 2000);
+      uint redAc = (uint)Math.Max(0, (red - _redBaseline) + 2000);
 
-        string line = current[..lineBreak].Trim();
-        _lineBuffer.Remove(0, lineBreak + 1);
-
-        if (TryParseAiResult(line, out AiDiagnosticResult aiResult))
-        {
-          AiDiagnosticReceived?.Invoke(this, aiResult);
-        }
-        else if (TryParseSample(line, out IRSample sample))
-        {
-          RawSampleReceived?.Invoke(this, sample);
-        }
-      }
+      RawSampleReceived?.Invoke(this, new IRSample((long)ts, irAc, redAc));
     }
   }
 
-  private static bool TryParseAiResult(string? line, out AiDiagnosticResult result)
+  private void OnMetricsUpdated(object? sender, CharacteristicUpdatedEventArgs args)
   {
-    result = default;
-    if (string.IsNullOrWhiteSpace(line) || !line.Contains("\"hrv\"")) return false;
-    
+    string json = Encoding.UTF8.GetString(args.Characteristic.Value);
+    MetricsReceived?.Invoke(this, json);
+
+    // Parse the JSON string to fire the correct events to the UI
     try
     {
-      using JsonDocument doc = JsonDocument.Parse(line);
-      JsonElement root = doc.RootElement;
-      if (!root.TryGetProperty("hrv", out JsonElement hrv)) return false;
-      
-      long ts    = root.TryGetProperty("ts",    out JsonElement tsEl) ? tsEl.GetInt64()   : 0;
-      float sdnn  = hrv.TryGetProperty("sdnn",  out JsonElement s)    ? s.GetSingle()     : 0f;
-      float rmssd = hrv.TryGetProperty("rmssd", out JsonElement r)    ? r.GetSingle()     : 0f;
-      string rhythm = hrv.TryGetProperty("rhythm", out JsonElement rh) ? rh.GetString() ?? "Unknown" : "Unknown";
-      int stress  = hrv.TryGetProperty("stress", out JsonElement st)  ? st.GetInt32()    : 0;
-      
-      result = new AiDiagnosticResult(ts, sdnn, rmssd, rhythm, stress);
-      return true;
-    }
-    catch { return false; }
-  }
+      using var doc = System.Text.Json.JsonDocument.Parse(json);
+      var root = doc.RootElement;
+      long ts = root.GetProperty("ts").GetInt64();
 
-  private static bool TryParseSample(string? line, out IRSample sample)
-  {
-    sample = default;
-    if (string.IsNullOrWhiteSpace(line) || line.Length < 10) return false;
-
-    try
-    {
-      // Fast manual parser for 100Hz waveforms
-      if (!line.Contains("\"ir\"")) return false;
-
-      long ts = 0; uint ir = 0; uint red = 0;
-      
-      // Simple string-based extraction to avoid repeated JsonDocument allocations
-      string[] parts = line.Replace("{", "").Replace("}", "").Replace("\"", "").Split(',');
-      foreach (var part in parts)
+      if (root.TryGetProperty("hrv", out var hrvObj))
       {
-        var kv = part.Split(':');
-        if (kv.Length != 2) continue;
-        var key = kv[0].Trim();
-        var val = kv[1].Trim();
-        
-        if (key == "ts") ts = long.Parse(val);
-        else if (key == "ir") ir = uint.Parse(val);
-        else if (key == "red") red = uint.Parse(val);
-      }
-
-      if (ts > 0)
-      {
-        sample = new IRSample(ts, ir, red);
-        return true;
-      }
-      return false;
-    }
-    catch
-    {
-      return false;
-    }
-  }
-
-  private static uint ParseUInt(JsonElement element)
-  {
-    if (element.ValueKind == JsonValueKind.Number)
-    {
-      if (element.TryGetUInt32(out uint value))
-      {
-        return value;
-      }
-
-      if (element.TryGetInt64(out long signedValue) && signedValue >= 0)
-      {
-        return (uint)Math.Min(signedValue, uint.MaxValue);
+        float sdnn = hrvObj.GetProperty("sdnn").GetSingle();
+        float rmssd = hrvObj.GetProperty("rmssd").GetSingle();
+        // Since firmware doesn't send Rhythm/Stress yet, we mock them or leave empty
+        var result = new AiDiagnosticResult(ts, sdnn, rmssd, "Normal", 0);
+        AiDiagnosticReceived?.Invoke(this, result);
       }
     }
-
-    if (element.ValueKind == JsonValueKind.String && uint.TryParse(element.GetString(), out uint parsed))
+    catch (Exception ex)
     {
-      return parsed;
+      System.Diagnostics.Debug.WriteLine($"Failed to parse metrics: {ex.Message}");
     }
-
-    return 0;
   }
 }

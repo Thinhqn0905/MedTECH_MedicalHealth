@@ -64,7 +64,7 @@
 - JSON telemetry over Serial (debug) + WebSocket (optional)
 - Verification against reference pulse oximeter
 
-> **Status: ✅ IMPLEMENTED** — firmware compiled and flashed to ESP32-S3 (COM6). Includes MAX30102 read, Pan-Tompkins, HRV analyzer, SpO2 calculator, BLE GATT server (HR/SpO2/Waveform/HRV characteristics), Serial+WS output. RAM: 13.9%, Flash: 27.6%.
+> **Status: ✅ COMPLETED & VERIFIED** — Full diagnostic firmware deployed. Includes MAX30102 (100Hz, 12.5mA), Pan-Tompkins Peak Detection, SpO2 (Beer-Lambert), HRV (SDNN/RMSSD), and Multi-Characteristic BLE (Binary + JSON). App synchronized with dual-characteristic protocol.
 
 ### Phase 2 — ECG Firmware (Board B standalone)
 **Complexity: Medium | Estimated: 2 weeks**

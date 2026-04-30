@@ -90,6 +90,7 @@ public sealed class EcgBleReader : IAsyncDisposable
         await _afChar.StartUpdatesAsync().ConfigureAwait(false);
       }
 
+      DiagnosticLog?.Invoke(this, "[ECG] Connected to Board B");
       ConnectionStateChanged?.Invoke(this, true);
     }
     catch
@@ -225,7 +226,7 @@ public sealed class EcgBleReader : IAsyncDisposable
       if ((DateTime.UtcNow - _lastDiagLog).TotalSeconds >= 2)
       {
         _lastDiagLog = DateTime.UtcNow;
-        DiagnosticLog?.Invoke(this, $"[BLE] Receiving pkts, len={data?.Length ?? -1}");
+        DiagnosticLog?.Invoke(this, $"[ECG] Receiving pkts, len={data?.Length ?? -1}");
       }
 
       // MTU default = 23 bytes → max payload = 20 bytes.
