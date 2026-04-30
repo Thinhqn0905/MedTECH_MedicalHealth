@@ -1,0 +1,10 @@
+%% Primary transport choice: USB serial for deterministic latency and simpler clinical deployment.
+flowchart LR
+    A[MAX30102 Sensor\nI2C Addr 0x57] -->|I2C @ 400 kHz\nFIFO samples @ 100 Hz\nIRQ GPIO4 (falling edge)| B[ESP32-S3 Firmware]
+    B -->|USB CDC Serial\nJSON line: {"ts":ms,"ir":u32,"red":u32}\n115200 baud (~100 samples/s)| C[C# Serial Listener]
+    B -. Optional fallback .->|Wi-Fi WebSocket ws://device-ip:8080\nSame JSON payload\n~100 messages/s| D[C# WebSocket Listener]
+    C -->|IRSample objects @ 100 Hz| E[Raw Buffer\nCircular, 1000 samples]
+    D -->|IRSample objects @ 100 Hz| E
+    E -->|Windowed signal vectors @ 100 Hz| F[Signal Processor\nPan-Tompkins + R-ratio]
+    F -->|BPM + SpO2 + waveform points\nUI refresh ~30 FPS| G[WPF UI Renderer]
+    E -->|CSV rows\nTimestamp,IR,Red,BPM,SpO2| H[Email Export Module]

@@ -1,0 +1,14 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : [],
+		"files" : [],
+		"nodes" : []
+	},
+	"installers" : [],
+	"paths" : 
+	{
+		"build" : "esp-idf/esp32s3",
+		"source" : "C:/Users/ADMIN/.platformio/packages/framework-espidf/components/esp32s3"
+	}
+}

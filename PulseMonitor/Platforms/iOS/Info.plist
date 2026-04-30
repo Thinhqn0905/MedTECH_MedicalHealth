@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleDisplayName</key>
+  <string>PulseMonitor</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.medtech.pulsemonitor</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>PulseMonitor</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+  <key>UIDeviceFamily</key>
+  <array>
+    <integer>1</integer>
+    <integer>2</integer>
+  </array>
+
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>PulseMonitor uses Bluetooth to receive MAX30102 data from the ESP32-S3 device.</string>
+  <key>NSBluetoothPeripheralUsageDescription</key>
+  <string>PulseMonitor needs Bluetooth peripheral access to connect to the PulseMonitor BLE stream.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>PulseMonitor uses local network access for WebSocket fallback streaming.</string>
+</dict>
+</plist>

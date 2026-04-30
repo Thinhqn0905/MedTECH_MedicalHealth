@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:PulseMonitor.ViewModels"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.Maui;assembly=LiveChartsCore.SkiaSharpView.Maui"
+             x:Class="PulseMonitor.Views.AiDiagnosticsPage"
+             x:DataType="viewModels:AiDiagnosticsViewModel"
+             BackgroundColor="#F4F8FB">
+
+  <ScrollView>
+    <VerticalStackLayout Spacing="16" Padding="14">
+
+      <!-- Sync Status -->
+      <Label Text="{Binding LastUpdateText}"
+             FontSize="12"
+             TextColor="#8E9BB0"
+             HorizontalOptions="End" />
+
+      <!-- Rhythm Banner -->
+      <Border BackgroundColor="White"
+              Stroke="{Binding RhythmColor}"
+              StrokeThickness="2"
+              StrokeShape="RoundRectangle 16"
+              Padding="16">
+        <Grid ColumnDefinitions="Auto, *">
+          <Label Grid.Column="0"
+                 Text="{Binding RhythmIcon}"
+                 FontSize="32"
+                 VerticalOptions="Center"
+                 Margin="0,0,16,0" />
+          <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+            <Label Text="Rhythm Classification" FontSize="12" TextColor="#8E9BB0" FontAttributes="Bold" />
+            <Label Text="{Binding RhythmLabel}" FontSize="24" FontAttributes="Bold" TextColor="{Binding RhythmColor}" />
+          </VerticalStackLayout>
+        </Grid>
+      </Border>
+
+      <!-- HRV Stats Grid -->
+      <Grid ColumnDefinitions="*, *" ColumnSpacing="12">
+        <!-- SDNN -->
+        <Border Grid.Column="0"
+                BackgroundColor="White"
+                Stroke="#DCE6EF"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="16">
+          <VerticalStackLayout>
+            <Label Text="SDNN" FontSize="12" TextColor="#8E9BB0" FontAttributes="Bold" />
+            <Label Text="{Binding SdnnText}" FontSize="24" FontAttributes="Bold" TextColor="#123047" Margin="0,4,0,0" />
+            <Label Text="Overall HRV" FontSize="10" TextColor="#8E9BB0" />
+          </VerticalStackLayout>
+        </Border>
+
+        <!-- RMSSD -->
+        <Border Grid.Column="1"
+                BackgroundColor="White"
+                Stroke="#DCE6EF"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                Padding="16">
+          <VerticalStackLayout>
+            <Label Text="RMSSD" FontSize="12" TextColor="#8E9BB0" FontAttributes="Bold" />
+            <Label Text="{Binding RmssdText}" FontSize="24" FontAttributes="Bold" TextColor="#123047" Margin="0,4,0,0" />
+            <Label Text="Parasympathetic" FontSize="10" TextColor="#8E9BB0" />
+          </VerticalStackLayout>
+        </Border>
+      </Grid>
+
+      <!-- Stress Level -->
+      <Border BackgroundColor="White"
+              Stroke="{Binding StressColor}"
+              StrokeThickness="1"
+              StrokeShape="RoundRectangle 12"
+              Padding="16">
+        <Grid ColumnDefinitions="*, Auto">
+          <VerticalStackLayout>
+            <Label Text="Calculated Stress Level" FontSize="12" TextColor="#8E9BB0" FontAttributes="Bold" />
+            <Label Text="{Binding StressLabel}" FontSize="20" FontAttributes="Bold" TextColor="{Binding StressColor}" Margin="0,4,0,0" />
+          </VerticalStackLayout>
+          
+          <Ellipse Grid.Column="1" 
+                   WidthRequest="24" HeightRequest="24" 
+                   Fill="{Binding StressColor}" 
+                   VerticalOptions="Center" />
+        </Grid>
+      </Border>
+
+      <!-- AI Diagnostic (AF Detection) -->
+      <Border BackgroundColor="White"
+              Stroke="{Binding AfColor}"
+              StrokeThickness="2"
+              StrokeShape="RoundRectangle 16"
+              Padding="16">
+        <VerticalStackLayout Spacing="8">
+          <Label Text="AI Atrial Fibrillation Analysis" FontSize="12" TextColor="#8E9BB0" FontAttributes="Bold" />
+          <Grid ColumnDefinitions="*, Auto">
+            <Label Grid.Column="0" Text="{Binding AfLabel}" FontSize="22" FontAttributes="Bold" TextColor="{Binding AfColor}" />
+            <Label Grid.Column="1" Text="{Binding AfProbability, StringFormat='{0:P1}'}" FontSize="18" VerticalOptions="Center" TextColor="#2C445A" />
+          </Grid>
+          <ProgressBar Progress="{Binding AfProbability}" 
+                       ProgressColor="{Binding AfColor}" HeightRequest="8" />
+          <Label Text="Confidence interval based on 8s ECG window." FontSize="10" TextColor="#8E9BB0" />
+        </VerticalStackLayout>
+      </Border>
+
+      <!-- Frequency Domain Analysis -->
+      <Border BackgroundColor="White"
+              Stroke="#DCE6EF"
+              StrokeThickness="1"
+              StrokeShape="RoundRectangle 16"
+              Padding="16">
+        <VerticalStackLayout Spacing="16">
+          <Label Text="Frequency Domain" FontSize="16" FontAttributes="Bold" TextColor="#123047" />
+          
+          <Grid ColumnDefinitions="*,*,*" BackgroundColor="#F8FAFC" Padding="12">
+            <VerticalStackLayout Grid.Column="0" HorizontalOptions="Center">
+              <Label Text="LF Power" FontSize="11" TextColor="#8E9BB0" />
+              <Label Text="{Binding LfPowerText}" FontSize="14" FontAttributes="Bold" TextColor="#123047" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="1" HorizontalOptions="Center">
+              <Label Text="HF Power" FontSize="11" TextColor="#8E9BB0" />
+              <Label Text="{Binding HfPowerText}" FontSize="14" FontAttributes="Bold" TextColor="#123047" />
+            </VerticalStackLayout>
+            <VerticalStackLayout Grid.Column="2" HorizontalOptions="Center">
+              <Label Text="LF/HF Ratio" FontSize="11" TextColor="#8E9BB0" />
+              <Label Text="{Binding LfHfRatioText}" FontSize="14" FontAttributes="Bold" TextColor="#123047" />
+            </VerticalStackLayout>
+          </Grid>
+
+          <!-- Spectrum Chart -->
+          <lvc:CartesianChart HeightRequest="200"
+                              Series="{Binding SpectrumSeries}"
+                              XAxes="{Binding SpectrumXAxes}"
+                              YAxes="{Binding SpectrumYAxes}"
+                              LegendPosition="Hidden" />
+        </VerticalStackLayout>
+      </Border>
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentView>

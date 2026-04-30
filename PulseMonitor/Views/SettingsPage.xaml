@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:PulseMonitor.ViewModels"
+             x:Class="PulseMonitor.Views.SettingsPage"
+             x:DataType="viewModels:SettingsViewModel"
+             Title="Settings"
+             BackgroundColor="#F4F8FB">
+  <ScrollView>
+    <VerticalStackLayout Padding="14" Spacing="12">
+      <Border BackgroundColor="White"
+              Stroke="#DCE6EF"
+              StrokeThickness="1"
+              StrokeShape="RoundRectangle 12"
+              Padding="12">
+        <VerticalStackLayout Spacing="10">
+          <Label Text="Hardware" FontAttributes="Bold" TextColor="#2C445A" />
+
+          <Label Text="BLE Device Name" />
+          <Entry Text="{Binding BleDeviceName}" Placeholder="PulseMonitor" />
+
+          <Label Text="Wi-Fi WebSocket URI" />
+          <Entry Text="{Binding WifiUri}" Placeholder="ws://192.168.4.1:8080" />
+
+          <Label Text="Connection Mode (Ble/WebSocket/Serial)" />
+          <Entry Text="{Binding ConnectionMode}" />
+
+          <Label Text="Serial Port (Windows)" />
+          <Entry Text="{Binding SerialPort}" Placeholder="COM5" />
+
+          <Label Text="Serial Baud" />
+          <Entry Text="{Binding SerialBaud}" Keyboard="Numeric" />
+        </VerticalStackLayout>
+      </Border>
+
+      <Border BackgroundColor="White"
+              Stroke="#DCE6EF"
+              StrokeThickness="1"
+              StrokeShape="RoundRectangle 12"
+              Padding="12">
+        <VerticalStackLayout Spacing="10">
+          <Label Text="SMTP" FontAttributes="Bold" TextColor="#2C445A" />
+
+          <Label Text="SMTP Host" />
+          <Entry Text="{Binding SmtpHost}" Placeholder="smtp.gmail.com" />
+
+          <Label Text="SMTP Port" />
+          <Entry Text="{Binding SmtpPort}" Keyboard="Numeric" />
+
+          <Label Text="SMTP User" />
+          <Entry Text="{Binding SmtpUser}" Placeholder="user@example.com" />
+
+          <Label Text="SMTP Password" />
+          <Entry Text="{Binding SmtpPassword}" IsPassword="True" />
+
+          <Label Text="Recipient Email" />
+          <Entry Text="{Binding RecipientEmail}" Placeholder="recipient@hospital.org" />
+
+          <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+            <CheckBox IsChecked="{Binding UseSsl}" />
+            <Label Text="Use SSL" VerticalOptions="Center" />
+          </HorizontalStackLayout>
+        </VerticalStackLayout>
+      </Border>
+
+      <Label Text="{Binding StatusMessage}" TextColor="#2C445A" />
+
+      <Button Text="Save"
+              Command="{Binding SaveCommand}"
+              BackgroundColor="#007AFF"
+              TextColor="White" />
+
+      <Button Text="Back"
+              Command="{Binding BackCommand}"
+              BackgroundColor="#C5CDD5"
+              TextColor="#123047" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

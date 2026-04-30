@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewModels="clr-namespace:PulseMonitor.ViewModels"
+             xmlns:views="clr-namespace:PulseMonitor.Views"
+             x:Class="PulseMonitor.MainPage"
+             x:DataType="viewModels:MainViewModel"
+             Title="PulseMonitor"
+             BackgroundColor="#F4F8FB">
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="14" RowSpacing="12">
+    <Border Grid.Row="0"
+            BackgroundColor="White"
+          Stroke="#DCE6EF"
+            StrokeThickness="1"
+            StrokeShape="RoundRectangle 14"
+            Padding="12">
+      <Grid ColumnDefinitions="36,*,Auto" ColumnSpacing="10" VerticalOptions="Center">
+        <Image Source="logo.svg" WidthRequest="32" HeightRequest="32" />
+
+        <Label Grid.Column="1"
+               Text="PulseMonitor Medical Dashboard"
+               VerticalOptions="Center"
+               FontSize="18"
+               FontAttributes="Bold"
+               TextColor="#123047"
+               LineBreakMode="TailTruncation" />
+
+        <HorizontalStackLayout Grid.Column="2" VerticalOptions="Center" Spacing="8">
+          <Ellipse WidthRequest="14"
+                   HeightRequest="14"
+                   Fill="{Binding ConnectionColor}" />
+          <Label Text="{Binding ConnectionStatusText}"
+                 VerticalOptions="Center"
+                 FontAttributes="Bold"
+                 TextColor="#2C445A" />
+        </HorizontalStackLayout>
+      </Grid>
+    </Border>
+
+    <!-- Tab Indicator -->
+    <Grid Grid.Row="1" ColumnDefinitions="*, *" ColumnSpacing="8" Margin="0,0,0,4">
+      <Button Grid.Column="0" Text="Dashboard" 
+              Command="{Binding SwitchTabCommand}" CommandParameter="0"
+              BackgroundColor="{Binding DashboardTabColor}" TextColor="White" 
+              CornerRadius="8" HeightRequest="36" Padding="0" />
+      <Button Grid.Column="1" Text="AI Diagnostics" 
+              Command="{Binding SwitchTabCommand}" CommandParameter="1"
+              BackgroundColor="{Binding AiTabColor}" TextColor="White" 
+              CornerRadius="8" HeightRequest="36" Padding="0" />
+    </Grid>
+
+    <CarouselView Grid.Row="2" 
+                  ItemsSource="{Binding Tabs}"
+                  Position="{Binding CurrentTabIndex}"
+                  IsSwipeEnabled="True"
+                  Loop="False"
+                  IndicatorView="IndicatorView">
+      <CarouselView.ItemTemplate>
+        <DataTemplate x:DataType="ContentView">
+          <ContentView Content="{Binding .}" />
+        </DataTemplate>
+      </CarouselView.ItemTemplate>
+    </CarouselView>
+    <IndicatorView x:Name="IndicatorView" Grid.Row="2" VerticalOptions="End" Margin="0,0,0,10" IsVisible="False" />
+
+    <Grid Grid.Row="3" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8">
+      <Button Grid.Row="0"
+              Text="{Binding ConnectButtonText}"
+              Command="{Binding ConnectCommand}"
+              BackgroundColor="#007AFF"
+              TextColor="White"
+              HorizontalOptions="Fill" />
+
+      <Button Grid.Row="1"
+              Text="{Binding RecordingButtonText}"
+              Command="{Binding ToggleRecordingCommand}"
+              BackgroundColor="#007AFF"
+              TextColor="White"
+              HorizontalOptions="Fill" />
+
+      <Button Grid.Row="2"
+              Text="Export Email"
+              Command="{Binding ExportEmailCommand}"
+              BackgroundColor="#007AFF"
+              TextColor="White"
+              HorizontalOptions="Fill" />
+
+      <Button Grid.Row="3"
+              Text="Save to Device (Excel)"
+              Command="{Binding ExportLocalCommand}"
+              BackgroundColor="#34C759"
+              TextColor="White"
+              HorizontalOptions="Fill" />
+
+      <Button Grid.Row="4"
+              Text="Settings"
+              Command="{Binding OpenSettingsCommand}"
+              BackgroundColor="#007AFF"
+              TextColor="White"
+              HorizontalOptions="Fill" />
+    </Grid>
+  </Grid>
+</ContentPage>

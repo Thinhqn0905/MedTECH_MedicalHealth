@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PulseMonitor.App">
+  <Application.Resources>
+    <ResourceDictionary>
+      <Color x:Key="MedicalBackgroundColor">#F4F8FB</Color>
+      <Color x:Key="MedicalBlueColor">#007AFF</Color>
+      <Color x:Key="HealthyGreenColor">#34C759</Color>
+      <Color x:Key="AlertColor">#FF3B30</Color>
+      <Color x:Key="PanelBorderColor">#DCE6EF</Color>
+
+      <Style TargetType="Label">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextColor" Value="#2C445A" />
+      </Style>
+
+      <Style TargetType="Entry">
+        <Setter Property="TextColor" Value="#2C445A" />
+        <Setter Property="PlaceholderColor" Value="Gray" />
+      </Style>
+
+      <Style TargetType="Button">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="10" />
+      </Style>
+    </ResourceDictionary>
+  </Application.Resources>
+</Application>

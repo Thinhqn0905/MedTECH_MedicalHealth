@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<maui:MauiWinUIApplication
+    x:Class="PulseMonitor.WinUI.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:maui="using:Microsoft.Maui"
+    xmlns:local="using:PulseMonitor.WinUI">
+
+    <maui:MauiWinUIApplication.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </maui:MauiWinUIApplication.Resources>
+
+</maui:MauiWinUIApplication>
