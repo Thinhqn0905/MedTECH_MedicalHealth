@@ -1,3 +1,9 @@
 Model/*
 firmware_ecg/components_opt/**
 Test/AFDB_Test/**
+
+!Model/.gitkeep
+
+!firmware_ecg/components_opt/.gitkeep
+
+!Test/AFDB_Test/.gitkeep
