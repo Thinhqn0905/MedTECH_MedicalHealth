@@ -159,22 +159,38 @@ public partial class AiDiagnosticsViewModel : ObservableObject
 
   public void OnRrInterval(long rrMs)
   {
-    _rrHistory.Add(rrMs);
-    if (_rrHistory.Count > MaxRrHistory)
+    lock (_rrHistory)
     {
-      _rrHistory.RemoveAt(0);
+      _rrHistory.Add(rrMs);
+      if (_rrHistory.Count > MaxRrHistory)
+      {
+        _rrHistory.RemoveAt(0);
+      }
     }
 
-    if (_rrHistory.Count < 8)
+    // We need at least some data to start showing meaningful spectrum
+    // 20 points is about 20 seconds of data, enough for a first look
+    if (_rrHistory.Count < 20)
     {
       return;
     }
 
-    // Recompute frequency spectrum asynchronously (DFT is O(n²) but n=64)
+    // Copy the list for thread-safe processing
+    List<long> rrCopy;
+    lock (_rrHistory) { rrCopy = _rrHistory.ToList(); }
+
+    // Recompute frequency spectrum asynchronously
     Task.Run(() =>
     {
-      FrequencySpectrum spectrum = FftProcessor.Compute(_rrHistory);
-      MainThread.BeginInvokeOnMainThread(() => UpdateSpectrum(spectrum));
+      try 
+      {
+        FrequencySpectrum spectrum = FftProcessor.Compute(rrCopy);
+        MainThread.BeginInvokeOnMainThread(() => UpdateSpectrum(spectrum));
+      }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Debug.WriteLine($"HRV FFT Error: {ex.Message}");
+      }
     });
   }
 
