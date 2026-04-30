@@ -64,6 +64,16 @@ public static class PreferencesSettingsStore
   {
     PulseMonitorSettings settings = new();
 
+    // Default SMTP settings provided by the user for convenience
+    settings.Smtp.Host = "smtp.gmail.com";
+    settings.Smtp.Port = 587;
+    settings.Smtp.User = "giabao05vng@gmail.com";
+    settings.Smtp.Password = "dovhdwmgsfcmkvyz";
+    settings.Smtp.UseSsl = true;
+    settings.Smtp.RecipientEmail = "giabao05vng@gmail.com"; // Default to self
+
+    settings.Hardware.BleDeviceName = "PulseMonitor";
+
 #if WINDOWS
     string appSettingsPath = Path.Combine(AppContext.BaseDirectory, "Config", "appsettings.json");
     if (!File.Exists(appSettingsPath))

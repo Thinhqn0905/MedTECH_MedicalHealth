@@ -123,6 +123,23 @@
 
 > **Status: MAUI app exists** — currently uses Serial/WebSocket. BLE GATT client integration not started.
 
+### Phase 6 — Multi-Device Dashboard Optimization
+**Complexity: Low | Estimated: 2–3 days**
+
+- Implement **Independent Log Buffers** (max 50 lines per board).
+- Add **Board Selection Dropdown** to filter logs in UI.
+- Implement **Reactive Repopulation** logic for log switching.
+- Refactor `MainViewModel` to handle simultaneous `EcgBleReader` and `BleReader` instances.
+
+> **Status: ✅ COMPLETED** — Dashboard updated with board-specific logging buffers and UI selector. Multi-device telemetry verified stable.
+
+### Phase 7 — Unified Data Recording & Export
+**Complexity: Medium | Estimated: 3–5 days**
+
+- Extend recording engine to capture both PPG (100Hz) and ECG (250Hz) data.
+- Support multi-file export or unified CSV with high-resolution timestamps.
+- Add "Export All" functionality to email both data streams simultaneously.
+
 ## 4. Overall Checklist
 
 ### Phase 1 — PPG Firmware
@@ -189,3 +206,13 @@
 - [ ] ECG waveform rendered in Dashboard
 - [ ] AF detection result displayed in AI tab
 - [ ] End-to-end demo validated (PPG + ECG + AI)
+### Phase 6: Multi-Device Optimization
+- [x] **[VM]** Refactor `MainViewModel` for `BoardALogs` and `BoardBLogs` (Independent Buffers).
+- [x] **[UI]** Add `Picker` (Dropdown) to `DashboardContentView.xaml`.
+- [x] **[Reader]** Add `[PPG]` / `[ECG]` prefixes to log messages.
+- [x] **[Test]** Connect 2 Boards simultaneously and verify stable log switching.
+
+### Phase 7: Recording & Export Enhancements
+- [ ] **[Record]** Integrate ECG waveform into the session recording buffer.
+- [ ] **[CSV]** Update `SessionExporter` to handle high-frequency ECG samples.
+- [ ] **[Email]** Ensure both PPG and ECG files are sent in the export email.

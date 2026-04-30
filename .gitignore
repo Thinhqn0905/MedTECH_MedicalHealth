@@ -1,9 +1,26 @@
+# .NET / MAUI
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+*.user
+*.userprefs
+*.suo
+*.sln.docstates
+
+# Android
+*.apk
+*.aab
+*.dex
+*.keystore
+!debug.keystore
+
+# Project specific
 Model/*
 firmware_ecg/components_opt/**
 Test/AFDB_Test/**
 
+# Keep directories
 !Model/.gitkeep
-
 !firmware_ecg/components_opt/.gitkeep
-
 !Test/AFDB_Test/.gitkeep

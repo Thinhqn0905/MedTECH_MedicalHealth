@@ -16,8 +16,8 @@ Verify the app no longer crashes during BLE ECG connection and confirm live data
 
 ## Critical Bugs
 - [x] ~~**MAUI Crash (SIGABRT)**: Buffer.BlockCopy out-of-bounds on short BLE packets~~ → **FIXED**
-- [ ] **Verify No Crash**: Confirm app stays alive after Connect ECG.
-- [ ] **Verify Data Stream**: Confirm `[BLE DATA]` logs appear in app event log.
+- [x] **Verify No Crash**: Confirm app stays alive after Connect ECG.
+- [x] **Verify Data Stream**: Confirm `[BLE DATA]` logs appear in app event log.
 
 ## Completed Tasks (Recent)
 - [x] Firmware flash to Board B (COM5) — stable, no boot-loop.
@@ -28,10 +28,23 @@ Verify the app no longer crashes during BLE ECG connection and confirm live data
 - [x] **Root-cause crash fix**: Strict packet validation + try-catch on all GATT callbacks.
 
 ## Next Steps
-1. [ ] **Test Connection**: Open app → Connect ECG → Verify no crash.
-2. [ ] **Verify ECG Data**: Confirm `[BLE DATA] Seq: N, Raw[0]: X` appears in log.
-3. [ ] **Verify Chart**: Confirm ECG waveform renders on dashboard.
-4. [ ] **Test with Sensor**: Re-attach AD8232 and verify real ECG signal.
+1. [x] **Test Connection**: Open app → Connect ECG → Verify no crash.
+2. [x] **Verify ECG Data**: Confirm `[BLE DATA] Seq: N, Raw[0]: X` appears in log.
+3. [x] **Verify Chart**: Confirm ECG waveform renders on dashboard.
+4. [x] **Test with Sensor**: Re-attach AD8232 and verify real ECG signal.
+
+## Phase 6: Multi-Device Optimization
+1. [x] **[VM]** Refactor `MainViewModel` for `BoardALogs` and `BoardBLogs` (Independent Buffers).
+2. [x] **[UI]** Add `Picker` (Dropdown) to `DashboardContentView.xaml`.
+3. [x] **[Reader]** Add `[PPG]` / `[ECG]` prefixes to log messages.
+4. [x] **[Test]** Connect 2 Boards simultaneously and verify stable log switching.
+
+## Phase 7: Recording & Export Enhancements
+1. [x] **[Record]** Integrate ECG waveform into the session recording buffer.
+2. [x] **[CSV]** Update `SessionExporter` to handle high-frequency ECG samples.
+3. [x] **[Email]** Ensure both PPG and ECG files are sent in the export email.
+
+> **Status: ✅ COMPLETED** — Unified recording engine deployed. Optimized CSV with Forward Fill implemented. Default SMTP credentials hardcoded.
 
 ## Technical Stats
 | Metric | Value |

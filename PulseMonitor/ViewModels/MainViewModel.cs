@@ -30,10 +30,18 @@ public partial class MainViewModel : ObservableObject
   private readonly RawBuffer _rawBuffer = new(1000);
   private readonly PanTompkinsDetector _panTompkinsDetector = new();
   private readonly SpO2Calculator _spO2Calculator = new();
-  private readonly object _sessionLock = new();
+  private readonly List<string> _boardALogs = new();
+  private readonly List<string> _boardBLogs = new();
+  private DateTime _lastLogTimeA = DateTime.MinValue;
+  private DateTime _lastLogTimeB = DateTime.MinValue;
   public object EcgLock { get; } = new();
-  private readonly Queue<ProcessedSample> _sessionSamples = [];
-  private DateTime _lastLogTime = DateTime.MinValue;
+  private readonly object _sessionLock = new();
+  private readonly Queue<DiagnosticSample> _sessionSamples = [];
+
+  [ObservableProperty]
+  private int _selectedBoardIndex = 1; // Default to Board B (ECG)
+
+  public List<string> BoardOptions { get; } = new() { "Board A (PPG)", "Board B (ECG)" };
   private readonly IServiceProvider _serviceProvider;
   private readonly IFileSaver _fileSaver;
   private readonly IDispatcherTimer? _sessionTimer;
@@ -114,7 +122,7 @@ public partial class MainViewModel : ObservableObject
   private string _connectionColor = "#FF3B30";
 
   [ObservableProperty]
-  private string _connectButtonText = "Connect";
+  private string _connectButtonText = "Connect HR";
 
   [ObservableProperty]
   private string _recordingButtonText = "Start Recording";
@@ -180,6 +188,24 @@ public partial class MainViewModel : ObservableObject
     AiTabColor        = value == 1 ? "#007AFF" : "#C5CDD5";
   }
 
+  partial void OnSelectedBoardIndexChanged(int value)
+  {
+    UpdateDisplayLog();
+  }
+
+  private void UpdateDisplayLog()
+  {
+    MainThread.BeginInvokeOnMainThread(() =>
+    {
+      EventLogEntries.Clear();
+      var source = SelectedBoardIndex == 0 ? _boardALogs : _boardBLogs;
+      foreach (var log in source)
+      {
+        EventLogEntries.Add(log);
+      }
+    });
+  }
+
   [RelayCommand]
   private async Task ConnectAsync()
   {
@@ -232,6 +258,7 @@ public partial class MainViewModel : ObservableObject
       _reader.RawSampleReceived     += OnRawSampleReceived;
       _reader.ConnectionStateChanged += OnConnectionStateChanged;
       _reader.AiDiagnosticReceived  += OnAiDiagnosticReceived;
+      _reader.DiagnosticLog         += (s, msg) => AddBoardLog(0, msg);
 
       MainThread.BeginInvokeOnMainThread(() =>
       {
@@ -305,7 +332,7 @@ public partial class MainViewModel : ObservableObject
           AddLog(connected ? "ECG LIVE STREAM STARTING..." : "ECG stream stopped.");
         };
 
-        _ecgReader.DiagnosticLog += (s, msg) => AddLog(msg);
+        _ecgReader.DiagnosticLog += (s, msg) => AddBoardLog(1, msg);
         
         _ecgReader.WaveformReceived += (s, args) =>
         {
@@ -336,26 +363,37 @@ public partial class MainViewModel : ObservableObject
           
           lock (EcgLock)
           {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             foreach (var sample in samples)
             {
               // ECG scale adjustment
-              EcgBuffer[EcgHead] = sample / 2048.0f;
+              float scaledEcg = sample / 2048.0f;
+              EcgBuffer[EcgHead] = scaledEcg;
               EcgHead = (EcgHead + 1) % 1250;
+
+              // Recording
+              if (_isRecording)
+              {
+                lock (_sessionLock)
+                {
+                  _sessionSamples.Enqueue(new DiagnosticSample(Timestamp: now, Ecg: scaledEcg));
+                  if (_sessionSamples.Count > MaxSessionSamples) _sessionSamples.Dequeue();
+                }
+              }
             }
           }
 
           // Log once every 2 seconds to confirm connection without lagging the UI
-          if ((DateTime.UtcNow - _lastLogTime).TotalSeconds >= 2)
+          if ((DateTime.UtcNow - _lastLogTimeB).TotalSeconds >= 2)
           {
-            _lastLogTime = DateTime.UtcNow;
-            AddLog($"[BLE DATA] Seq: {args.seq}, Raw[0]: {args.samples[0]}");
+            _lastLogTimeB = DateTime.UtcNow;
+            AddBoardLog(1, $"Seq: {args.seq}, Raw[0]: {args.samples[0]}");
             
             // Safety sync: If data is coming but UI says Disconnected, force it to Connected
-            if (EcgConnectionStatus != "ECG: Connected")
+            if (EcgConnectionStatus != "Connected")
             {
                 MainThread.BeginInvokeOnMainThread(() => {
-                    EcgConnectionStatus = "ECG: Connected";
-                    EcgConnectButtonText = "Disconnect";
+                    EcgConnectionStatus = "Connected";
                 });
             }
           }
@@ -441,7 +479,7 @@ public partial class MainViewModel : ObservableObject
 
     try
     {
-      List<ProcessedSample> exportSamples;
+      List<DiagnosticSample> exportSamples;
       lock (_sessionLock) { exportSamples = _sessionSamples.ToList(); }
 
       if (exportSamples.Count == 0)
@@ -473,7 +511,7 @@ public partial class MainViewModel : ObservableObject
 
     try
     {
-      List<ProcessedSample> exportSamples;
+      List<DiagnosticSample> exportSamples;
       lock (_sessionLock) { exportSamples = _sessionSamples.ToList(); }
 
       if (exportSamples.Count == 0)
@@ -551,7 +589,7 @@ public partial class MainViewModel : ObservableObject
     {
       lock (_sessionLock)
       {
-        _sessionSamples.Enqueue(new ProcessedSample(sample.Timestamp, sample.IR, sample.Red, bpm, spO2));
+        _sessionSamples.Enqueue(new DiagnosticSample(sample.Timestamp, sample.IR, sample.Red, bpm, spO2));
         if (_sessionSamples.Count > MaxSessionSamples)
         {
           _sessionSamples.Dequeue();
@@ -655,20 +693,34 @@ public partial class MainViewModel : ObservableObject
 
   private void AddLog(string message)
   {
+    AddBoardLog(SelectedBoardIndex, message);
+  }
+
+  private void AddBoardLog(int boardIndex, string message)
+  {
     string entry = $"[{DateTime.Now:HH:mm:ss.fff}] {message}";
 #if DEBUG
-    Console.WriteLine("PULSE_DEBUG: " + message);
+    Console.WriteLine($"PULSE_DEBUG_B{boardIndex}: " + message);
 #endif
 
-    MainThread.BeginInvokeOnMainThread(() =>
+    var targetList = boardIndex == 0 ? _boardALogs : _boardBLogs;
+    lock (targetList)
     {
-      EventLogEntries.Add(entry);
-      int excess = EventLogEntries.Count - MaxLogEntries;
-      if (excess > 0)
+      targetList.Add(entry);
+      if (targetList.Count > 50) targetList.RemoveAt(0);
+    }
+
+    if (SelectedBoardIndex == boardIndex)
+    {
+      MainThread.BeginInvokeOnMainThread(() =>
       {
-        EventLogEntries.RemoveRange(0, excess);
-      }
-    });
+        EventLogEntries.Add(entry);
+        if (EventLogEntries.Count > 50)
+        {
+           EventLogEntries.RemoveAt(0);
+        }
+      });
+    }
   }
 
   private async Task DisconnectReaderAsync()
@@ -691,7 +743,7 @@ public partial class MainViewModel : ObservableObject
 
     MainThread.BeginInvokeOnMainThread(() =>
     {
-      ConnectButtonText = "Connect";
+      ConnectButtonText = "Connect HR";
       SetConnectionState(false);
     });
   }

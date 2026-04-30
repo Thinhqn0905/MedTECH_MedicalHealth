@@ -1,16 +1,19 @@
-# MedTech Device - ECG & AF Detection System
+# MedTech Device — Advanced ECG & AI Diagnostics
 
-Hệ thống thiết bị y tế đeo tay (Wearable MedTech) tích hợp đo điện tâm đồ (ECG/PPG), phân tích nhịp tim (HRV) và chẩn đoán rung nhĩ (Atrial Fibrillation - AF) theo thời gian thực bằng AI ngay trên phần cứng vi điều khiển (Edge AI). 
+Hệ thống thiết bị y tế cầm tay (MedTech) chuyên dụng cho việc theo dõi điện tâm đồ (ECG), phân tích biến thiên nhịp tim (HRV) và chẩn đoán **Rung tâm nhĩ (AF)** thời gian thực bằng công nghệ **Edge AI** ngay trên chip xử lý.
 
-Dự án bao gồm firmware chạy trên ESP32-S3, ứng dụng di động theo dõi sức khỏe và các công cụ Python để test độ chính xác của AI.
+---
 
-## Key Features
+## 🚀 Tính năng cốt lõi
 
-- **Real-time ECG/PPG Processing**: Đo và lọc nhiễu tín hiệu nhịp tim theo thời gian thực ở tần số 100Hz.
-- **On-device AI (Edge Computing)**: Tích hợp mô hình AI TensorFlow Lite Micro để phát hiện rung nhĩ (AF) ngay trên ESP32-S3 mà không cần internet.
-- **BLE Streaming**: Truyền dữ liệu sức khỏe (HRV, kết quả AF) về ứng dụng điện thoại qua thư viện NimBLE-Arduino (siêu ổn định).
-- **AI Dashboard**: Hiển thị xác suất rung nhĩ (AF Probability) và biểu đồ phổ tần số HRV ngay trên ứng dụng di động.
-- **Memory Optimized**: Tối ưu hóa bộ nhớ SRAM (245KB) cho Tensor Arena để AI chạy mượt mà ngay trên board.
+- **Real-time 250Hz ECG Streaming**: Thu thập và lọc tín hiệu tim tần số cao, truyền tải mượt mà qua BLE.
+- **Advanced DSP Engine**: Bộ lọc số IIR Bandpass (0.5-30Hz) và Notch (50Hz) loại bỏ hoàn toàn nhiễu điện lưới và nhiễu cơ.
+- **On-Device AI (Edge Inference)**: Sử dụng mô hình TensorFlow Lite Micro để phát hiện AF ngay trên ESP32-S3. Không cần Cloud, đảm bảo quyền riêng tư.
+- **Smart Lead-Off Detection**: Tự động phát hiện và cảnh báo khi các điện cực bị lỏng hoặc rơi ra khỏi cơ thể.
+- **Cross-Platform Dashboard**: Ứng dụng di động (.NET MAUI) hiển thị sóng tim thời gian thực, phổ tần số HRV và kết quả chẩn đoán AI.
+- **Medical Reporting**: Xuất dữ liệu tim ra file Excel và gửi báo cáo qua Email cho bác sĩ.
+
+---
 
 ---
 
@@ -87,32 +90,13 @@ python Test/stream_test_afdb.py --port COM6 --data-dir Test/AFDB_Test/test_4_rec
 
 ---
 
-## Architecture
+## 📑 Documentation (Tài liệu chi tiết)
 
-### Directory Structure
+Để hiểu sâu về hệ thống, vui lòng tham khảo các tài liệu chuyên sâu:
 
-```text
-├── firmware_ecg/            # Source code của Firmware ESP32-S3
-│   ├── platformio.ini       # Cấu hình build, bộ nhớ, PSRAM
-│   └── src/
-│       ├── main.cpp         # Entry point, BLE Task, AI Task
-│       ├── af_inference.cpp # Xử lý TFLite Micro, cấp phát Tensor Arena
-│       ├── af_inference.h   # Cấu hình ngưỡng AF, dung lượng PSRAM
-│       └── model_data.h     # Trọng số mô hình AI đã convert sang mảng C
-├── PulseMonitor/            # Ứng dụng điện thoại .NET MAUI
-├── Model/                   # Mô hình AI gốc (TensorFlow Lite)
-├── Test/                    # Dữ liệu mẫu (AFDB) và script Python Test
-└── docs/                    # Tài liệu giải thuật, Data flow, và Debug log
-```
-
-### Dòng dữ liệu (Data Flow)
-
-1. Cảm biến đọc tín hiệu ECG/PPG (100Hz) qua FIFO.
-2. Thuật toán Pan-Tompkins trích xuất các đỉnh R-R (Heart Rate Variability).
-3. Đưa mảng R-R vào `HrvAnalyzer` (Bộ đệm vòng).
-4. Cứ mỗi 30 nhịp tim, firmware tự động copy mảng này đưa vào `af_inference`.
-5. TFLite Micro (`Invoke()`) chạy inference trên mảng dữ liệu.
-6. Kết quả `AF Probability` được gửi qua BLE về Mobile App (PulseMonitor) hoặc in ra Serial.
+- **[Hệ thống Kiến trúc (Architecture)](./Architecture.md)**: Sơ đồ luồng dữ liệu, các tầng xử lý và thiết lập phần cứng.
+- **[Giải thuật & AI (Algorithms)](./docs/ALGORITHMS.md)**: Chi tiết về các thuật toán DSP (Pan-Tompkins, IIR) và mô hình Edge AI.
+- **[Hướng dẫn Debug & Test](./docs/tasknow.md)**: Nhật ký xử lý lỗi và các bước kiểm thử hệ thống.
 
 ---
 

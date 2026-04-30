@@ -59,9 +59,17 @@
               StrokeShape="RoundRectangle 16"
               Padding="12">
         <VerticalStackLayout Spacing="8">
-          <Label Text="IR and Red Waveforms (8-second window)"
-                 FontAttributes="Bold"
-                 TextColor="#2C445A" />
+          <HorizontalStackLayout Spacing="10">
+            <Label Text="IR and Red Waveforms" FontAttributes="Bold" TextColor="#2C445A" VerticalOptions="Center" />
+            <Button Text="{Binding ConnectButtonText}" 
+                    Command="{Binding ConnectCommand}" 
+                    BackgroundColor="#007AFF" 
+                    TextColor="White" 
+                    HeightRequest="35" 
+                    Padding="10,0" 
+                    FontSize="12" />
+            <Label Text="{Binding ConnectionStatusText}" VerticalOptions="Center" FontSize="12" TextColor="Gray" />
+          </HorizontalStackLayout>
           <skia:SKCanvasView x:Name="PpgCanvas" HeightRequest="260" PaintSurface="OnPaintPpgSurface" />
         </VerticalStackLayout>
       </Border>
@@ -74,8 +82,14 @@
               Padding="12">
         <VerticalStackLayout Spacing="8">
           <HorizontalStackLayout Spacing="10">
-            <Label Text="ECG Waveform (Board B)" FontAttributes="Bold" TextColor="#2C445A" VerticalOptions="Center" />
-            <Button Text="{Binding EcgConnectButtonText}" Command="{Binding ConnectEcgCommand}" HeightRequest="35" Padding="10,0" FontSize="12" />
+            <Label Text="ECG Waveform" FontAttributes="Bold" TextColor="#2C445A" VerticalOptions="Center" />
+            <Button Text="{Binding EcgConnectButtonText}" 
+                    Command="{Binding ConnectEcgCommand}" 
+                    BackgroundColor="#123047" 
+                    TextColor="White" 
+                    HeightRequest="35" 
+                    Padding="10,0" 
+                    FontSize="12" />
             <Label Text="{Binding EcgConnectionStatus}" VerticalOptions="Center" FontSize="12" TextColor="Gray" />
           </HorizontalStackLayout>
           <Grid HeightRequest="200">
@@ -99,7 +113,18 @@
               StrokeShape="RoundRectangle 12"
               Padding="10">
         <VerticalStackLayout Spacing="8">
-          <Label Text="Event Log" FontAttributes="Bold" TextColor="#2C445A" />
+          <HorizontalStackLayout Spacing="10" HorizontalOptions="FillAndExpand">
+            <Label Text="Event Log" FontAttributes="Bold" TextColor="#2C445A" VerticalOptions="Center" />
+            <Picker Title="Select Board"
+                    ItemsSource="{Binding BoardOptions}"
+                    SelectedIndex="{Binding SelectedBoardIndex}"
+                    WidthRequest="180"
+                    HeightRequest="45"
+                    BackgroundColor="#F0F5FA"
+                    TextColor="#007AFF"
+                    FontSize="12"
+                    VerticalOptions="Center" />
+          </HorizontalStackLayout>
           <CollectionView ItemsSource="{Binding EventLogEntries}" HeightRequest="190">
             <CollectionView.ItemTemplate>
               <DataTemplate>

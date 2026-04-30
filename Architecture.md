@@ -1,99 +1,112 @@
-# PulseMonitor Platform Architecture
+# PulseMonitor Platform Architecture (v2.0)
 
-This document describes the architectural design, component interactions, and data flows of the **PulseMonitor** project, an end-to-end medical IoT prototype for tracking real-time heart rate, SpO2 (oxygen saturation), and HRV (Heart Rate Variability), augmented with continuous Edge AI Diagnostics.
+This document describes the architectural design, component interactions, and data flows of the **PulseMonitor** project, an end-to-end medical IoT prototype for tracking real-time **ECG (Electrocardiogram)**, augmented with continuous **Edge AI Diagnostics**.
 
 ---
 
 ## 1. High-Level System Overview
 
-The system consists of a two-tier architecture:
+The system consists of a two-tier architecture optimized for low-latency biological signal processing:
 
-1. **Hardware & Edge Tier (Firmware)**: An ESP32-S3 microcontroller interfaced with a MAX30102 optical sensor. It handles high-frequency data acquisition, signal processing, and continuous on-device AI analytics.
-2. **Client Presentation Tier (App)**: A cross-platform UI built with .NET 8 MAUI that consumes telemetry streams, visualizing waveform data, presenting AI diagnostic insights, and enabling SMTP-based medical reporting.
+1. **Hardware & Edge Tier (Firmware)**: An ESP32-S3 microcontroller interfaced with an **AD8232** ECG sensor. It handles 250Hz data acquisition, 4th-order DSP filtering, and continuous on-device AI analytics using TensorFlow Lite Micro.
+2. **Client Presentation Tier (App)**: A cross-platform UI built with **.NET 8 MAUI** that consumes BLE telemetry streams, visualizing waveform data, presenting AI diagnostic insights, and enabling medical data export.
 
 ```mermaid
 flowchart LR
-    A[MAX30102 Sensor] -->|I2C| B(ESP32-S3 Firmware)
-    B -->|Signal Processing| C{Edge AI Analyzer}
-    B -->|JSON Telemetry| D[UART / WebSocket]
-    D -->|Stream| E(MAUI Application)
-    E --> F[Dashboard UIs]
-    E -->|SMTP Export| G[Remote Physician]
+    A[AD8232 Sensor] -->|Analog| B(ESP32-S3 Firmware)
+    B -->|DSP Filtering| C[250Hz Waveform Stream]
+    B -->|Buffer Copy| D{Edge AI Analyzer}
+    C -->|BLE Notify| E(MAUI Application)
+    D -->|BLE Notify| E
+    E --> F[Dashboard UI]
+    E -->|XLSX/Email| G[Physician Report]
 ```
 
 ---
 
-## 2. Hardware & Edge Tier
+## 2. Hardware & Edge Tier (Firmware)
 
 The device's edge capability handles all critical mathematical computations, minimizing latency and the data payload transported to the client application.
 
 ### 2.1 Hardware Components
-- **Microcontroller**: ESP32-S3 (Dual-core Xtensa LX7 @ 240MHz, 512KB SRAM, 8MB Flash). Suitable for complex DSP and Edge AI constraints.
-- **Sensor**: MAX30102. Communicates via the I2C protocol (`0x57`), relying on Red and IR LEDs for photoplethysmogram (PPG) acquisition.
-  - **SCL/SDA Pin Mapping**: GPIO 9 & 8.
-  - **Interrupt Pin (IRQ)**: GPIO 4.
+- **Microcontroller**: ESP32-S3 (Dual-core Xtensa LX7 @ 240MHz, 320KB Internal SRAM, 8MB Flash).
+- **Sensor**: **AD8232** Single-Lead Heart Rate Monitor.
+  - **ECG Output**: GPIO 4 (ADC1_CH3).
+  - **Lead-Off +**: GPIO 5 (with internal pull-down).
+  - **Lead-Off -**: GPIO 6 (with internal pull-down).
+  - **Shutdown (SDN)**: GPIO 7.
 
-### 2.2 Firmware Architecture (PlatformIO)
+### 2.2 Signal Processing Pipeline
 Developed in C/C++ using the Arduino Core on PlatformIO.
 
-* **Acquisition Domain**: Runs a 100Hz fixed sampling loop to read RED and IR values from the MAX30102 FIFO buffer.
-* **Analysis Domain (`hrv_analyzer.cpp`)**: Calculate Heart Rate Variability (HRV) metrics in near real-time without blocking the sampling loop.
-  - Identifies R-peaks to calculate R-R intervals (RRIs).
-  - Calculates time-domain variables like **SDNN** (Standard Deviation of NN intervals) and **RMSSD** (Root Mean Square of Successive Differences).
-* **On-Device Edge AI Diagnostics**:
-  - Infers **Stress Levels** and **Rhythm Types** locally on the ESP32-S3 based on the continuous HRV vector space.
-* **Telemetry Domain**: Formats combined metrics into structured JSON payloads (`ArduinoJson v7`) and dispatches them across standard output (Serial / 115200 baud) or dynamically routes them through a WebSocket Server (`WebSockets` extension) if Wi-Fi mode is compiled (`-DUSE_WIFI`).
+* **Sampling Layer**: Runs a **250Hz** hardware timer interrupt for precise ADC acquisition.
+* **DSP Domain (`ecg_dsp.h`)**:
+  - **Bandpass Filter**: 4th-order IIR (0.5Hz to 30Hz) to remove baseline wander and muscle noise.
+  - **Notch Filter**: 50Hz (Q=30) to eliminate power line interference.
+* **Communication Layer**: Uses **NimBLE-Arduino** for high-efficiency BLE.
+  - **Batching**: Groups 10 samples into a single 22-byte BLE packet ([2 bytes Seq] + [20 bytes Data]) to reduce packet overhead.
+* **Edge AI Domain (`af_inference.cpp`)**:
+  - Runs **TensorFlow Lite Micro** in a background task.
+  - Analyzes 10-second windows (2500 samples) to detect Atrial Fibrillation (AF).
 
 ---
 
 ## 3. Client Application Tier (.NET 8 MAUI)
 
-The UI client is a cross-platform (Windows & Android) application designed to connect to the telemetry stream and project the data onto interactive dashboards.
+The UI client is a cross-platform (Android) application designed to connect to the BLE stream and project data onto interactive dashboards.
 
-### 3.1 Architectural Pattern
-The application relies on the **Model-View-ViewModel (MVVM)** pattern, leveraging `CommunityToolkit.Mvvm` to synchronize dynamic UI elements smoothly with the continuous background telemetry thread.
+### 3.1 Core Subsystems
 
-### 3.2 Core Subsystems
+**1. BLE Hardware Abstraction (`Hardware/EcgBleReader.cs`):**
+- Manages the Bluetooth LE lifecycle (Scanning, Connecting, MTU Negotiation).
+- **MTU Optimization**: Explicitly requests **247 bytes** MTU to handle high-frequency streams without truncation.
+- **Parsing**: Reconstructs the 250Hz waveform by stripping sequence numbers and handling packet loss via `NaN` interpolation.
 
-**1. Hardware Abstraction Layer (`Hardware/`):**
-Manages the inbound telemetry transport layer. Dependent on `appsettings.json` runtime configuration, the service mounts via `System.IO.Ports.SerialPort` (for USB debugging) or `Websocket.Client` (for detached wireless execution).
+**2. Visualization Pipeline (`Views/DashboardContentView.xaml`):**
+- Relies on **SkiaSharp** via `LiveChartsCore` for high-performance plotting.
+- Visualizes 1250 points (5 seconds) of filtered ECG data in a rolling buffer.
 
-**2. Data Processing Pipeline (`Processing/`):**
-Deserializes JSON payloads mapping hardware data structures into C# objects (e.g. `AiDiagnosticResult.cs` and `HrvProcessor.cs`). Runs client-side validation logic mapping SpO2 via approximate R-ratio calibrations and isolates LF/HF bands (Low/High frequency) for charting spectrum ranges.
-
-**3. User Interface & Bindings (`Views/` & `ViewModels/`):**
-UI views built with purely accessible standard XAML.
-- **Primary Dashboard UI**: Relies on `LiveChartsCore.SkiaSharpView.Maui` for high framerate plotting of raw PPG waveforms, BP gradients, and instant BPM readings. 
-- **AI Diagnostics View**: Discovered through swipe gestures, revealing hardware AI classification statistics combined with rich client-rendered Frequency Spectrum models. 
-
-**4. External Reporting (`Export/`):**
-Provides medical charting snapshots for diagnostic tracking. Built over `MailKit/MimeKit`, the app triggers manual or threshold-based event closures to bundle diagnostic history into formal reports dispatched over SMTP.
+**3. AI Diagnostic Interface:**
+- Consumes asynchronous `AfProbabilityReceived` events.
+- Displays real-time risk assessments and diagnostic metrics.
 
 ---
 
-## 4. Component Interaction Sequence
+## 4. Interaction Sequence
 
 ```mermaid
 sequenceDiagram
-    participant Sensor as MAX30102
+    participant Body as Human Body
+    participant Sensor as AD8232
     participant ESP as ESP32-S3
     participant MAUI as MAUI App
-    participant SMTP as SMTP Server
     
-    loop Every 10ms (100Hz)
-        Sensor->>ESP: FIFO Buffer (Red, IR)
+    loop Every 4ms (250Hz)
+        Body->>Sensor: Bio-electrical signals
+        Sensor->>ESP: Analog Voltage (Pin 4)
+        ESP->>ESP: IIR Bandpass + Notch Filter
     end
-    ESP->>ESP: HRV Calc (SDNN, RMSSD)
-    ESP->>ESP: Edge AI Assessment 
-    ESP->>MAUI: JSON Stream (Serial/WS)
-    MAUI->>MAUI: Parse Payload & Dispatch MVVM
-    MAUI->>MAUI: Update LiveChartsCore
-    alt User requests export 
-        MAUI->>SMTP: Encrypt Payload & Dispatch via MailKit
+    
+    Note over ESP: Batch 10 Samples
+    ESP->>MAUI: BLE Notify (22 bytes, Seq: N)
+    
+    rect rgb(240, 240, 240)
+        Note over ESP: Background Task
+        ESP->>ESP: AI Inference (TFLite)
+        ESP->>MAUI: BLE Notify (AF Prob %)
     end
+    
+    MAUI->>MAUI: Update Dashboard View
 ```
 
-## 5. Security and Limitations
-- The system employs SMTP SSL configurations via App Passwords.
-- All edge-computed values eliminate the need to pump raw biological sensor data into generic cloud platforms prioritizing Privacy by Design (PbD).
-- **Not FDA Cleared**: R-Ratio SpO2 calibration (`+/-2%`) is strictly experimental. All AI inference is isolated for learning and IoT diagnostics prototypes only.
+---
+
+## 5. Deployment Configurations
+
+| Environment | Purpose | BLE | AI | Output |
+| :--- | :--- | :--- | :--- | :--- |
+| `esp32s3_ecg` | Production / Clinical Test | ON | ON | BLE + Mobile App |
+| `stream_test` | AI Model Validation | OFF | ON | Serial (PC) |
+
+---
+*Last Updated: 2026-04-30 by Antigravity AI*

@@ -16,7 +16,7 @@ public sealed class EmailExporter
     _settings = settings;
   }
 
-  public async Task<string> ExportSessionAsync(IReadOnlyCollection<ProcessedSample> samples, CancellationToken cancellationToken = default)
+  public async Task<string> ExportSessionAsync(IReadOnlyCollection<DiagnosticSample> samples, CancellationToken cancellationToken = default)
   {
     if (samples.Count == 0)
     {
