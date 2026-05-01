@@ -106,51 +106,105 @@ Phân loại dựa trên biến thiên của các khoảng NN (NN-intervals):
 
 ---
 
-## 🚦 Hướng dẫn bắt đầu (Getting Started)
+## 📋 Yêu cầu hệ thống (Prerequisites)
+Để làm việc với dự án này, bạn cần cài đặt:
+- **Visual Studio Code** (cùng extension PlatformIO IDE).
+- **.NET 8.0 SDK** (hoặc mới hơn) cùng với workload `.NET Multi-platform App UI development`.
+- **Visual Studio 2022** (Khuyến nghị dùng cho phát triển Windows/Android).
+- **Git** (để clone repository).
 
-### 1. Chuẩn bị phần cứng
+---
+
+## 🚀 Hướng dẫn bắt đầu (Getting Started)
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/Thinhqn0905/MedTECH_MedicalHealth.git
+cd MedTECH_MedicalHealth
+```
+
+### 2. Chuẩn bị phần cứng
 - **ESP32-S3**: Vi xử lý trung tâm.
 - **MAX30102**: Kết nối I2C (SDA: GPIO 8, SCL: GPIO 9).
 - **AD8232**: Kết nối Analog (Output: GPIO 1).
 
-### 2. Cấu hình Firmware (PlatformIO)
+### 3. Cấu hình Firmware (PlatformIO)
 1. Mở thư mục `firmware` bằng VS Code.
-2. Kiểm tra `platformio.ini` và nạp code (Upload).
-3. Mở Serial Monitor (115200) để xem log hệ thống.
+2. PlatformIO sẽ tự động tải các thư viện cần thiết trong `platformio.ini`.
+3. Nhấn nút **Upload** (mũi tên sang phải ở thanh trạng thái) để nạp code.
+4. Mở Serial Monitor (baud rate 115200) để xem log hệ thống.
 
-### 3. Cài đặt Ứng dụng di động
-1. Cài đặt .NET 8 SDK và workload MAUI.
-2. Build project `PulseMonitor` lên thiết bị Android/iOS.
-3. Chấp nhận quyền vị trí (Location) và Bluetooth để kết nối với thiết bị.
+### 4. Cài đặt Ứng dụng di động
+1. Mở solution `MedTech_Device.sln` bằng Visual Studio 2022.
+2. Chọn project `PulseMonitor`.
+3. Chọn thiết bị đích là **Android Emulator** hoặc cắm điện thoại Android/iOS thật vào.
+4. Nhấn F5 để Build & Deploy.
+5. Chấp nhận quyền vị trí (Location) và Bluetooth trên điện thoại để ứng dụng có thể quét thiết bị BLE.
 
 ---
 
-## ⚙️ Biến môi trường & Cấu hình
-| Biến | Mô tả | Giá trị mặc định |
+## ⚙️ Biến môi trường & Cấu hình (Environment Variables)
+Bạn có thể cấu hình các thông số sau trong firmware và ứng dụng:
+
+| Biến | Vị trí | Mô tả | Giá trị mặc định |
+|:---|:---|:---|:---|
+| `BLE_NAME` | `firmware/src/ble_manager.cpp` | Tên thiết bị phát BLE | `PulseMonitor` |
+| `SMTP_SERVER` | `PulseMonitor` config | Server gửi Email báo cáo | `smtp.gmail.com` |
+| `SMTP_PORT` | `PulseMonitor` config | Cổng SMTP | `587` |
+
+---
+
+## 💻 Các lệnh có sẵn (Available Scripts)
+Bảng lệnh dùng trong terminal cho các nhà phát triển:
+
+| Lệnh | Môi trường | Mô tả |
 |:---|:---|:---|
-| `BLE_NAME` | Tên thiết bị hiển thị | `PulseMonitor` |
-| `SMTP_SERVER` | Server gửi Email báo cáo | `smtp.gmail.com` |
-| `SMTP_PORT` | Cổng SMTP | `587` |
+| `pio run` | `firmware/` | Build firmware ESP32-S3. |
+| `pio run -t upload` | `firmware/` | Nạp firmware xuống board. |
+| `pio device monitor` | `firmware/` | Mở Serial Monitor theo dõi log. |
+| `dotnet build -t:Run -f net8.0-android` | `PulseMonitor/` | Build và chạy App trên Android Emulator/Device. |
+| `dotnet clean` | `PulseMonitor/` | Xóa các file build cũ của MAUI. |
 
 ---
 
 ## 🧪 Kiểm thử (Testing)
 - **Unit Test**: Kiểm tra các thuật toán DSP trong thư mục `Test/`.
-- **Integration Test**: Sử dụng `nRF Connect` để kiểm tra các Characteristic của BLE.
-- **Simulation**: Sử dụng các tập tin `.csv` từ MIT-BIH database để giả lập tín hiệu tim.
+- **Integration Test**: Sử dụng ứng dụng `nRF Connect` (trên điện thoại) để quét và kiểm tra các Characteristic của BLE xem chúng có push dữ liệu (Notify) đúng hay không.
+- **Simulation**: Chạy script `python Test/stream_test_afdb.py` để giả lập dữ liệu từ bộ cơ sở dữ liệu MIT-BIH AFDB đẩy lên thiết bị qua cổng Serial khi không có cảm biến thật.
+
+---
+
+## 📦 Triển khai (Deployment)
+
+### 1. Triển khai Firmware (Production)
+Khi phần cứng đã hoàn thiện, bạn nạp firmware với cờ release để tối ưu hiệu năng:
+```bash
+cd firmware
+pio run -e esp32s3 -t upload
+```
+*Lưu ý: Firmware đã nạp có thể hoạt động độc lập ngay khi được cấp nguồn bằng Pin.*
+
+### 2. Triển khai Ứng dụng (Android APK)
+Để xuất file APK phát hành cho người dùng Android:
+```bash
+cd PulseMonitor
+dotnet publish -f net8.0-android -c Release
+```
+File APK sẽ được tạo tại `bin/Release/net8.0-android/publish/`.
 
 ---
 
 ## 🛠 Khắc phục sự cố (Troubleshooting)
-- **Không tìm thấy thiết bị BLE**: Đảm bảo ESP32 đã được cấp nguồn và đang nháy LED xanh.
-- **Tín hiệu nhiễu mạnh**: Kiểm tra dây tiếp địa (GND) và tránh xa các nguồn nhiễu điện từ (Adapter sạc, Motor).
-- **Lỗi Email Export**: Kiểm tra lại mật khẩu ứng dụng (App Password) trong cấu hình Gmail.
+- **Không tìm thấy thiết bị BLE**: Đảm bảo ESP32 đã được cấp nguồn và đang nháy LED xanh. Rút cáp và cắm lại nếu cần.
+- **Tín hiệu nhiễu mạnh (Noise)**: Kiểm tra dây tiếp địa (GND) và tránh xa các nguồn nhiễu điện từ (Adapter sạc, Motor). Thêm tụ 10uF cho cảm biến MAX30102.
+- **Lỗi Email Export**: Kiểm tra lại mật khẩu ứng dụng (App Password) trong cấu hình Gmail của ứng dụng.
+- **Lỗi `XA0137` khi Deploy Android**: Đây là lỗi Fast Deployment. Thêm `-p:EmbedAssembliesIntoApk=true` vào lệnh `dotnet build`.
 
 ---
 
-## 📜 Giấy phép & Đóng góp
+## 📜 Giấy phép & Đóng góp (License & Contributing)
 - **License**: MIT License.
-- **Contribution**: Mọi đóng góp về thuật toán AI và cải thiện UI đều được chào đón qua Pull Request.
+- **Contributing**: Mọi đóng góp về việc cải thiện thuật toán AI (HRV, AF detection) và UI đều được chào đón qua Pull Request.
 
 ---
-*Dự án được thực hiện bởi Thinhqn0905 & Antigravity AI — 2024*
+*Product from BSMART_LAB copyright 2026*
