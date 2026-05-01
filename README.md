@@ -1,10 +1,10 @@
 # MedTech Device — Advanced ECG & AI Diagnostics Ecosystem
 
 <div align="center">
-  <img src="https://docs.platformio.org/en/latest/_static/platformio-logo.png" height="50" alt="PlatformIO" /> &nbsp;&nbsp;
+  <img src="./docs/images/logos/platformio.svg" height="50" alt="PlatformIO" /> &nbsp;&nbsp;
   <img src="./docs/images/logos/espressif.png" height="50" alt="ESP32-S3" /> &nbsp;&nbsp;
-  <img src="https://www.gstatic.com/devrel-devsite/prod/v22100e4b7b2049e7bdfa67bca9eb686dd4b6113b86064f2ce906c6ec2e5b7b65/tensorflow/images/lockup.svg" height="50" alt="TensorFlow Lite" /> &nbsp;&nbsp;
-  <img src="https://www.bluetooth.com/wp-content/uploads/2019/04/Bluetooth_Symbol.png" height="50" alt="Bluetooth LE" /> &nbsp;&nbsp;
+  <img src="./docs/images/logos/tensorflow.svg" height="50" alt="TensorFlow Lite" /> &nbsp;&nbsp;
+  <img src="./docs/images/logos/ble.svg" height="50" alt="Bluetooth LE" /> &nbsp;&nbsp;
   <img src="./docs/images/logos/dotnet_maui.png" height="50" alt=".NET MAUI" />
 </div>
 
@@ -55,7 +55,7 @@ Hệ thống sử dụng các linh kiện y tế và vi điều khiển hiệu n
 
 ### Cấu trúc thư mục chi tiết
 ```text
-├── firmware/              # Mã nguồn ESP32-S3 (PlatformIO)
+├── firmware/              # Mã nguồn Board 1 (PPG & BLE Central)
 │   ├── src/
 │   │   ├── ble_manager.cpp    # Quản lý giao thức GATT & Advertising
 │   │   ├── hrv_analyzer.cpp   # Thuật toán phân tích biến thiên nhịp tim
@@ -63,6 +63,12 @@ Hệ thống sử dụng các linh kiện y tế và vi điều khiển hiệu n
 │   │   ├── spo2_calculator.cpp # Thuật toán tính SpO2 (Red/IR Ratio)
 │   │   └── main.cpp           # Luồng thực thi chính (100Hz Loop)
 │   └── platformio.ini         # Cấu hình thư viện (NimBLE, ArduinoJson)
+├── firmware_ecg/          # Mã nguồn Board 2 (ECG & Edge AI)
+│   ├── src/
+│   │   ├── af_inference.cpp   # Chạy mô hình phân loại Rung tâm nhĩ (TFLite)
+│   │   ├── ecg_dsp.cpp        # Bộ lọc số (DSP) xử lý tín hiệu ECG
+│   │   └── main.cpp           # Luồng thu thập AD8232 & suy luận AI
+│   └── platformio.ini         # Cấu hình ESP-IDF & TensorFlow Lite
 ├── PulseMonitor/          # Ứng dụng di động (.NET MAUI)
 │   ├── ViewModels/            # Xử lý logic MVVM & Data Binding
 │   ├── Hardware/              # Giao tiếp BLE tầng thấp
