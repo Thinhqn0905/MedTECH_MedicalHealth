@@ -15,6 +15,16 @@ Hệ thống thiết bị y tế cầm tay (MedTech) chuyên dụng cho việc t
 
 ---
 
+## 📸 Demo & Screenshots
+
+Dưới đây là hình ảnh thực tế từ ứng dụng di động kết nối với thiết bị:
+
+| **Dashboard (PPG + ECG)** | **AI Diagnostics & HRV** | **Frequency Domain Analysis** |
+|:---:|:---:|:---:|
+| ![Dashboard](./docs/images/dashboard_demo.png) | ![AI Diagnostics](./docs/images/ai_diagnostics.png) | ![Spectrum](./docs/images/hrv_spectrum.png) |
+
+> **Ghi chú:** Hình ảnh trên hiển thị sóng tim thời gian thực từ Board B (ECG) và Board A (PPG), cùng với các chỉ số phân tích biến thiên nhịp tim (SDNN, RMSSD) và phổ tần số HRV (LF/HF).
+
 ---
 
 ## Tech Stack
