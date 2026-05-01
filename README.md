@@ -46,7 +46,7 @@ Hệ thống sử dụng các linh kiện y tế và vi điều khiển hiệu n
 
 | **Bộ vi xử lý (ESP32-S3)** | **Cảm biến PPG (MAX30102)** | **Module ECG (AD8232)** |
 |:---:|:---:|:---:|
-| ![ESP32-S3](./docs/images/sensors/esp32s3_soc.png) | ![MAX30102](./docs/images/sensors/max30102.jpg) | ![AD8232](./docs/images/sensors/ad8232.jpg) |
+| ![ESP32-S3](./docs/images/sensors/esp32s3_soc.png) | ![MAX30102](./docs/images/sensors/max30102.png) | ![AD8232](./docs/images/sensors/ad8232.png) |
 | *Dual-core 240MHz, tích hợp AI Accelerators* | *Đo SpO2 & Nhịp tim qua quang học* | *Thu thập điện tâm đồ (ECG) chuẩn y tế* |
 
 ---
@@ -205,12 +205,6 @@ File APK sẽ được tạo tại `bin/Release/net8.0-android/publish/`.
 - **Tín hiệu nhiễu mạnh (Noise)**: Kiểm tra dây tiếp địa (GND) và tránh xa các nguồn nhiễu điện từ (Adapter sạc, Motor). Thêm tụ 10uF cho cảm biến MAX30102.
 - **Lỗi Email Export**: Kiểm tra lại mật khẩu ứng dụng (App Password) trong cấu hình Gmail của ứng dụng.
 - **Lỗi `XA0137` khi Deploy Android**: Đây là lỗi Fast Deployment. Thêm `-p:EmbedAssembliesIntoApk=true` vào lệnh `dotnet build`.
-
----
-
-## 📜 Giấy phép & Đóng góp (License & Contributing)
-- **License**: MIT License.
-- **Contributing**: Mọi đóng góp về việc cải thiện thuật toán AI (HRV, AF detection) và UI đều được chào đón qua Pull Request.
 
 ---
 *Product from BSMART_LAB copyright 2026*
