@@ -53,45 +53,75 @@ Hệ thống sử dụng các linh kiện y tế và vi điều khiển hiệu n
 
 ## 📂 Kiến trúc hệ thống (Architecture)
 
-### Cấu trúc thư mục
+### Cấu trúc thư mục chi tiết
 ```text
 ├── firmware/              # Mã nguồn ESP32-S3 (PlatformIO)
-│   ├── src/               # Logic xử lý DSP & AI
-│   ├── include/           # Header files & TFLite Models
-│   └── platformio.ini     # Cấu hình build & thư viện
+│   ├── src/
+│   │   ├── ble_manager.cpp    # Quản lý giao thức GATT & Advertising
+│   │   ├── hrv_analyzer.cpp   # Thuật toán phân tích biến thiên nhịp tim
+│   │   ├── peak_detector.cpp  # Bộ lọc & phát hiện đỉnh R-Peak
+│   │   ├── spo2_calculator.cpp # Thuật toán tính SpO2 (Red/IR Ratio)
+│   │   └── main.cpp           # Luồng thực thi chính (100Hz Loop)
+│   └── platformio.ini         # Cấu hình thư viện (NimBLE, ArduinoJson)
 ├── PulseMonitor/          # Ứng dụng di động (.NET MAUI)
-│   ├── ViewModels/        # Logic xử lý dữ liệu & MVVM
-│   ├── Hardware/          # Lớp giao tiếp BLE/Serial
-│   └── Views/             # Giao diện người dùng (XAML)
+│   ├── ViewModels/            # Xử lý logic MVVM & Data Binding
+│   ├── Hardware/              # Giao tiếp BLE tầng thấp
+│   ├── Views/                 # UI/UX (XAML)
+│   └── Resources/             # Assets, Fonts, Logos
 ├── docs/                  # Tài liệu & Hình ảnh
-│   └── images/            # Demo, Logos, Sensors
-└── Test/                  # Scripts kiểm thử Python & Database mẫu
+│   ├── images/                # Screenshots & Demo
+│   └── logos/                 # Official Tech Logos
+└── Test/                  # Scripts kiểm thử (Python)
 ```
 
 ### Luồng dữ liệu (Data Flow)
-1. **Sensor Layer**: MAX30102 (I2C) & AD8232 (Analog) gửi tín hiệu thô.
-2. **DSP Layer**: ESP32-S3 thực hiện lọc số IIR (Bandpass + Notch) để loại bỏ nhiễu 50Hz.
-3. **Inference Layer**: TFLite Micro phân tích các cửa sổ RR-Intervals để dự đoán AF.
-4. **Transport Layer**: Dữ liệu gộp (JSON) được gửi qua BLE GATT Characteristic.
-5. **UI Layer**: App .NET MAUI nhận dữ liệu, vẽ biểu đồ SkiaSharp và hiển thị chẩn đoán.
+1. **Sensor Layer**: Thu thập dữ liệu thô từ cảm biến quang học (PPG) và điện cực (ECG).
+2. **DSP Layer**: ESP32-S3 thực hiện lọc nhiễu 50Hz và chuẩn hóa tín hiệu.
+3. **Analytics Layer**: Tính toán RR-Intervals và các chỉ số HRV (SDNN, RMSSD).
+4. **Transport Layer**: Đóng gói dữ liệu JSON và truyền qua BLE Notify.
+5. **UI Layer**: Ứng dụng di động giải mã dữ liệu và vẽ biểu đồ thời gian thực.
+
+---
+
+## 🛠 Thông số kỹ thuật chuyên sâu (Technical Deep Dive)
+
+### 1. Giao thức Bluetooth LE (GATT)
+Hệ thống sử dụng các UUID tùy chỉnh để truyền tải dữ liệu hiệu quả:
+- **Service UUID**: `DE010001-0000-1000-8000-00805F9B34FB`
+- **Waveform Characteristic (Notify)**: `DE010003-...` (Truyền sóng thô IR/Red)
+- **Metrics Characteristic (Notify)**: `DE010004-...` (Truyền BPM, SpO2, HRV)
+
+### 2. Thuật toán phân loại nhịp tim
+Phân loại dựa trên biến thiên của các khoảng NN (NN-intervals):
+- **Normal**: Nhịp tim đều đặn trong dải 50-120 BPM.
+- **Tachycardia**: Nhịp nhanh (RR < 500ms).
+- **Bradycardia**: Nhịp chậm (RR > 1200ms).
+- **Irregular**: Nhịp không đều (Hệ số biến thiên CoV > 0.18) - Dấu hiệu cảnh báo AF.
+
+### 3. Đánh giá mức độ Stress (SDNN-based)
+- **Thấp (Low)**: SDNN ≥ 50ms
+- **Trung bình (Moderate)**: 30ms ≤ SDNN < 50ms
+- **Cao (High)**: 20ms ≤ SDNN < 30ms
+- **Rất cao (Very High)**: SDNN < 20ms
 
 ---
 
 ## 🚦 Hướng dẫn bắt đầu (Getting Started)
 
 ### 1. Chuẩn bị phần cứng
-- Kết nối MAX30102: SDA (GPIO 4), SCL (GPIO 5).
-- Kết nối AD8232: OUTPUT (GPIO 1), LO+ (GPIO 2), LO- (GPIO 3).
+- **ESP32-S3**: Vi xử lý trung tâm.
+- **MAX30102**: Kết nối I2C (SDA: GPIO 8, SCL: GPIO 9).
+- **AD8232**: Kết nối Analog (Output: GPIO 1).
 
-### 2. Cấu hình Firmware (VS Code + PlatformIO)
+### 2. Cấu hình Firmware (PlatformIO)
 1. Mở thư mục `firmware` bằng VS Code.
-2. Đảm bảo cổng COM chính xác trong `platformio.ini`.
-3. Nhấn **Upload** để nạp code.
+2. Kiểm tra `platformio.ini` và nạp code (Upload).
+3. Mở Serial Monitor (115200) để xem log hệ thống.
 
-### 3. Chạy Ứng dụng di động
-1. Mở solution `MedTech_Device.sln` bằng Visual Studio 2022.
-2. Chọn project `PulseMonitor` và target là **Android Emulator** hoặc thiết bị thật.
-3. Bật Bluetooth trên điện thoại và nhấn **Connect** trong App.
+### 3. Cài đặt Ứng dụng di động
+1. Cài đặt .NET 8 SDK và workload MAUI.
+2. Build project `PulseMonitor` lên thiết bị Android/iOS.
+3. Chấp nhận quyền vị trí (Location) và Bluetooth để kết nối với thiết bị.
 
 ---
 
@@ -99,21 +129,28 @@ Hệ thống sử dụng các linh kiện y tế và vi điều khiển hiệu n
 | Biến | Mô tả | Giá trị mặc định |
 |:---|:---|:---|
 | `BLE_NAME` | Tên thiết bị hiển thị | `PulseMonitor` |
-| `SMTP_SERVER` | Server gửi Email | `smtp.gmail.com` |
+| `SMTP_SERVER` | Server gửi Email báo cáo | `smtp.gmail.com` |
 | `SMTP_PORT` | Cổng SMTP | `587` |
 
 ---
 
 ## 🧪 Kiểm thử (Testing)
-- **Serial Test**: Sử dụng `pio device monitor` để xem log AI và Latency (ms).
-- **Data Simulation**: Chạy `python Test/stream_test_afdb.py` để giả lập dữ liệu từ bộ cơ sở dữ liệu AFDB lên thiết bị qua Serial.
+- **Unit Test**: Kiểm tra các thuật toán DSP trong thư mục `Test/`.
+- **Integration Test**: Sử dụng `nRF Connect` để kiểm tra các Characteristic của BLE.
+- **Simulation**: Sử dụng các tập tin `.csv` từ MIT-BIH database để giả lập tín hiệu tim.
 
 ---
 
 ## 🛠 Khắc phục sự cố (Troubleshooting)
-- **Lỗi BLE Disconnect**: Kiểm tra nguồn cấp cho ESP32. Sử dụng tụ lọc 10uF cho MAX30102 nếu tín hiệu nhiễu.
-- **Sóng ECG bị phẳng**: Đảm bảo điện cực dán chặt và không bị khô gel. Kiểm tra chân kết nối LO+/LO-.
-- **Lỗi Build App**: Đảm bảo đã cài đặt đầy đủ các workload **.NET Multi-platform App UI development**.
+- **Không tìm thấy thiết bị BLE**: Đảm bảo ESP32 đã được cấp nguồn và đang nháy LED xanh.
+- **Tín hiệu nhiễu mạnh**: Kiểm tra dây tiếp địa (GND) và tránh xa các nguồn nhiễu điện từ (Adapter sạc, Motor).
+- **Lỗi Email Export**: Kiểm tra lại mật khẩu ứng dụng (App Password) trong cấu hình Gmail.
 
 ---
-*Dự án được phát triển bởi Thinhqn0905 & Antigravity AI*
+
+## 📜 Giấy phép & Đóng góp
+- **License**: MIT License.
+- **Contribution**: Mọi đóng góp về thuật toán AI và cải thiện UI đều được chào đón qua Pull Request.
+
+---
+*Dự án được thực hiện bởi Thinhqn0905 & Antigravity AI — 2024*
