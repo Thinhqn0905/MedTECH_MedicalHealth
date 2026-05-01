@@ -211,4 +211,4 @@ File APK sẽ được tạo tại `bin/Release/net8.0-android/publish/`.
 - **Lỗi `XA0137` khi Deploy Android**: Đây là lỗi Fast Deployment. Thêm `-p:EmbedAssembliesIntoApk=true` vào lệnh `dotnet build`.
 
 ---
-*Product from BSMART_LAB copyright 2026*
+*Product from ThinhPham
