@@ -1,10 +1,10 @@
 # MedTech Device — Advanced ECG & AI Diagnostics Ecosystem
 
 <div align="center">
-  <img src="./docs/images/logos/platformio.png" height="50" alt="PlatformIO" /> &nbsp;&nbsp;
+  <img src="https://docs.platformio.org/en/latest/_static/platformio-logo.png" height="50" alt="PlatformIO" /> &nbsp;&nbsp;
   <img src="./docs/images/logos/espressif.png" height="50" alt="ESP32-S3" /> &nbsp;&nbsp;
-  <img src="./docs/images/logos/tensorflow.png" height="50" alt="TensorFlow Lite" /> &nbsp;&nbsp;
-  <img src="./docs/images/logos/ble.png" height="50" alt="Bluetooth LE" /> &nbsp;&nbsp;
+  <img src="https://www.gstatic.com/devrel-devsite/prod/v22100e4b7b2049e7bdfa67bca9eb686dd4b6113b86064f2ce906c6ec2e5b7b65/tensorflow/images/lockup.svg" height="50" alt="TensorFlow Lite" /> &nbsp;&nbsp;
+  <img src="https://www.bluetooth.com/wp-content/uploads/2019/04/Bluetooth_Symbol.png" height="50" alt="Bluetooth LE" /> &nbsp;&nbsp;
   <img src="./docs/images/logos/dotnet_maui.png" height="50" alt=".NET MAUI" />
 </div>
 
