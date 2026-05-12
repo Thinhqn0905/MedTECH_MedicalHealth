@@ -29,18 +29,17 @@ public sealed class PanTompkinsDetector
   public long LastRrMs       { get; private set; }
   public bool HasNewPeak     { get; private set; } // True only for one sample when a peak is found
 
-  public int Update(IRSample sample)
+  public int Update(double raw, long timestamp)
   {
     HasNewPeak = false; // Reset every sample
     if (!_isInitialized)
     {
-      _baseline = sample.IR;
-      _previousTimestamp = sample.Timestamp;
+      _baseline = raw;
+      _previousTimestamp = timestamp;
       _isInitialized = true;
       return LastBpm;
     }
 
-    double raw = sample.IR;
     _baseline += 0.01 * (raw - _baseline);
 
     double highPass = raw - _baseline;
@@ -69,7 +68,7 @@ public sealed class PanTompkinsDetector
 
     _olderIntegrated = _previousIntegrated;
     _previousIntegrated = integrated;
-    _previousTimestamp = sample.Timestamp;
+    _previousTimestamp = timestamp;
 
     return LastBpm;
   }

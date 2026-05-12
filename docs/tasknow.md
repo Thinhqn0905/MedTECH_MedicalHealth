@@ -1,67 +1,80 @@
-# Current Tasks & Progress - PPG/ECG Integration Stable
+# Current Tasks & Progress - PulseMonitor
 
-## Status: ✅ STABLE (Phase 1 & 7 Complete)
+## Status: 🟡 ACTIVE (Export & Chart Fixes Applied)
 
-## Current Objective
-Final validation of dual-board live streaming and AI diagnostics.
+---
 
-## Root Cause Found ✅
-**`System.ArgumentException: Offset and length were out of bounds`**
-- **Location**: `EcgBleReader.OnWaveformUpdated()` → `Buffer.BlockCopy(data, 2, samples, 0, 20)`
-- **Cause**: Previous fix relaxed the 22-byte strict check, allowing short packets through. When a short packet (e.g., 10 bytes) arrived, `BlockCopy` tried to read 20 bytes → `ArgumentException` → Unhandled on Android GATT binder thread → **SIGABRT** → App crash.
-- **Fix Applied**: 
-  1. Restored strict `data.Length != 22` check with early `return`.
-  2. Wrapped all 3 GATT callbacks (`OnWaveformUpdated`, `OnLeadOffUpdated`, `OnAfUpdated`) in `try-catch` to prevent any future unhandled exception from killing the process.
-  3. Added null checks on `data` before accessing `.Length`.
+## 🔴 Current Bugs Fixed (This Session)
 
-## Critical Bugs
-- [x] ~~**MAUI Crash (SIGABRT)**: Buffer.BlockCopy out-of-bounds on short BLE packets~~ → **FIXED**
-- [x] **Verify No Crash**: Confirm app stays alive after Connect ECG.
-- [x] **Verify Data Stream**: Confirm `[BLE DATA]` logs appear in app event log.
+### Fix 1 – PPG flat baseline line when disconnected ✅
+- **File:** `DashboardContentView.xaml.cs` → `OnPaintPpgSurface()`
+- Draw a horizontal center line when no data (matching ECG disconnected style)
 
-## Completed Tasks (Recent)
-- [x] Firmware flash to Board B (COM5) — stable, no boot-loop.
-- [x] BLE scan timeout reduced to 10s.
-- [x] Thread-safe ECG buffer access (`lock(EcgLock)` in ViewModel + DashboardView).
-- [x] Added `ACCESS_COARSE_LOCATION` to AndroidManifest.
-- [x] Enhanced app logging (first 500 packets logged immediately).
-- [x] **Root-cause crash fix**: Strict packet validation + try-catch on all GATT callbacks.
+### Fix 2 – Export Email / Save to Device crashes app ✅
+- **Root Cause:** `IsBusy = true/false` and `Shell.DisplayAlert` were being called from a **background thread** (after `ConfigureAwait(false)` continuation), causing a cross-thread MAUI UI dispatch crash on Android.
+- **Fix:** All UI interactions (IsBusy, DisplayAlert) now explicitly dispatched via `MainThread.BeginInvokeOnMainThread()` or `MainThread.InvokeOnMainThreadAsync()`. Heavy email IO wrapped in `Task.Run`.
 
-## Phase 1: PPG Firmware (Board A) ✅ COMPLETED
-1. [x] **[FW]** Pan-Tompkins Peak Detection (100Hz).
-2. [x] **[FW]** SpO2 Calculation (Beer-Lambert).
-3. [x] **[FW]** HRV Analysis (SDNN, RMSSD, Stress).
-4. [x] **[FW]** Multi-Characteristic BLE (Standard HR/SpO2 + Binary Waveform + JSON Metrics).
-5. [x] **[APP]** Updated `BleReader` to support dual-characteristic protocol.
+### Fix 3 – Frequency Domain chart not rendering ✅
+- **Root Cause:** `SpectrumSeries` was declared as `ISeries[]` (plain array). LiveChartsCore requires `ObservableCollection<ISeries>` to receive change notifications and trigger chart redraws.
+- **Fix:** Changed to `ObservableCollection<ISeries>` with explicit `.Add()` in constructor.
 
-## Phase 6: Multi-Device Optimization
-1. [x] **[VM]** Refactor `MainViewModel` for `BoardALogs` and `BoardBLogs` (Independent Buffers).
-2. [x] **[UI]** Add `Picker` (Dropdown) to `DashboardContentView.xaml`.
-3. [x] **[Reader]** Add `[PPG]` / `[ECG]` prefixes to log messages.
-4. [x] **[Test]** Connect 2 Boards simultaneously and verify stable log switching.
+---
 
-## Phase 7: Recording & Export Enhancements
-1. [x] **[Record]** Integrate ECG waveform into the session recording buffer.
-2. [x] **[CSV]** Update `SessionExporter` to handle high-frequency ECG samples.
-3. [x] **[Email]**
+## 🔴 Pending – Requires Configuration Before Execution
 
-### 🔴 Current Blockers (Critical)
-1. **BLE Discovery Failure (Board A):** Mobile app fails to discover or connect to PPG board even after name shortening and UUID fallback implementation.
-   - *Status:* Brainstorming root cause (Hypothesis: Android caching or Scanning filter issue).
-   - *Next Action:* Verify specific error message from App UI logs.
+### SMTP Email Export – Needs Verified Credentials
+> **⚠ IMPORTANT:** The default Gmail credentials (`giabao05vng@gmail.com`) in `PreferencesSettingsStore.cs` may be expired or the App Password may have been revoked. Gmail App Passwords expire if 2FA is changed or the password is regenerated.
 
-> **Status: ✅ COMPLETED** — Unified recording engine deployed. Optimized CSV with Forward Fill implemented. Default SMTP credentials hardcoded.
+**Before testing Export Email, verify:**
+1. Go to **Google Account → Security → App Passwords**
+2. Create a new App Password for "Mail" on "Windows Computer"  
+3. Update `PreferencesSettingsStore.cs` line 71: `settings.Smtp.Password = "NEW_16_CHAR_APP_PASSWORD";`
+4. Or configure via **Settings page** in the app (preferred — no code change needed)
 
-## Technical Stats
-| Metric | Value |
-| --- | --- |
-| Board | ESP32-S3 (Board B) |
-| BLE MTU | 247 bytes |
-| Packet Size | 22 bytes (Seq: 2, Data: 20) |
-| Scan Timeout | 10 seconds |
-| Crash Root Cause | Buffer.BlockCopy on short BLE packet |
-| Fix | Strict length check + try-catch on GATT callbacks |
+**SMTP Config checklist:**
+- [ ] Host: `smtp.gmail.com`
+- [ ] Port: `587`
+- [ ] UseSsl: `true`
+- [ ] User: valid Gmail address
+- [ ] Password: 16-character App Password (NOT your Gmail login password)
+- [ ] RecipientEmail: destination address
 
-## Notes
-- Board B is confirmed alive and notifying (`att_handle=12` and `15`).
-- The crash was introduced by a previous "relaxation" of the packet check. Lesson: never weaken validation on JNI/binder threads.
+---
+
+## 🟡 Active Tasks
+
+### Frequency Domain Chart – Needs Real ECG Data to Validate
+- Chart now uses `ObservableCollection<ISeries>` (fixed)
+- Chart only populates when **≥20 RR intervals** are detected from Pan-Tompkins detector
+- **Requires:** PPG board (Board A) connected and streaming — HRV computation is client-side from RR intervals
+- [ ] Connect Board A (PPG) → verify `_rrHistory.Count` reaches 20+ → confirm chart renders
+
+### Board A (PPG) BLE Discovery
+- App still fails to discover Board A (`PulseMonitor_PPG`)
+- **Next action:** Check Android BLE cache. Try on real device with Bluetooth off/on cycle.
+- [ ] Verify board is advertising with name `PulseMonitor_PPG`
+- [ ] Test with nRF Connect app to confirm advertisement is visible
+
+---
+
+## Technical Reference
+
+### Build Command
+```powershell
+dotnet build PulseMonitor -t:Run -f net8.0-android -p:RuntimeIdentifier=android-arm64 -p:AndroidSdkDirectory="C:\Users\ADMIN\AppData\Local\Android\Sdk"
+```
+
+### ADB
+```powershell
+& "C:\Users\ADMIN\AppData\Local\Android\Sdk\platform-tools\adb.exe" devices
+```
+
+### Key Architecture
+| Component | Detail |
+|-----------|--------|
+| Board B (ECG) | ESP32-S3, BLE, COM5, confirmed alive |
+| Board A (PPG) | MAX30102, BLE, discovery failing |
+| ECG Buffer | 1250 samples, circular ring |
+| PPG Buffer | 800 samples (8s @ 100Hz) |
+| HRV FFT | Client-side, 4Hz resampled, 256-pt DFT |
+| Export Email | Gmail SMTP, requires valid App Password |

@@ -29,6 +29,7 @@ public partial class MainViewModel : ObservableObject
 
   private readonly RawBuffer _rawBuffer = new(1000);
   private readonly PanTompkinsDetector _panTompkinsDetector = new();
+  private readonly PanTompkinsDetector _ecgPanTompkinsDetector = new();
   private readonly SpO2Calculator _spO2Calculator = new();
   private readonly List<string> _boardALogs = new();
   private readonly List<string> _boardBLogs = new();
@@ -385,20 +386,33 @@ public partial class MainViewModel : ObservableObject
           
           lock (EcgLock)
           {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long packetReceiveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            // Extrapolate backwards assuming 10ms per sample (100Hz) to get accurate timestamps for PanTompkins
+            long sampleTime = packetReceiveTime - (samples.Length * 10);
+            
             foreach (var sample in samples)
             {
+              sampleTime += 10;
+
               // ECG scale adjustment
               float scaledEcg = sample / 2048.0f;
               EcgBuffer[EcgHead] = scaledEcg;
               EcgHead = (EcgHead + 1) % 1250;
+
+              // Compute RR intervals from ECG for AI Diagnostics frequency chart
+              // Pass raw unscaled sample to avoid floating point precision issues in derivative
+              _ecgPanTompkinsDetector.Update(sample, sampleTime);
+              if (_ecgPanTompkinsDetector.HasNewPeak)
+              {
+                _aiDiagnosticsViewModel.OnRrInterval(_ecgPanTompkinsDetector.LastRrMs);
+              }
 
               // Recording
               if (_isRecording)
               {
                 lock (_sessionLock)
                 {
-                  _sessionSamples.Enqueue(new DiagnosticSample(Timestamp: now, Ecg: scaledEcg));
+                  _sessionSamples.Enqueue(new DiagnosticSample(Timestamp: sampleTime, Ecg: scaledEcg));
                   if (_sessionSamples.Count > MaxSessionSamples) _sessionSamples.Dequeue();
                 }
               }
@@ -497,7 +511,7 @@ public partial class MainViewModel : ObservableObject
   private async Task ExportEmailAsync()
   {
     if (IsBusy) return;
-    IsBusy = true;
+    MainThread.BeginInvokeOnMainThread(() => IsBusy = true);
 
     try
     {
@@ -506,41 +520,42 @@ public partial class MainViewModel : ObservableObject
 
       if (exportSamples.Count == 0)
       {
-        await Shell.Current.DisplayAlert("Export", "No recorded samples available. Please record some data first.", "OK");
+        await MainThread.InvokeOnMainThreadAsync(() =>
+          Application.Current.MainPage.DisplayAlert("Export", "No recorded samples available. Please record some data first.", "OK"));
         AddLog("No recorded samples available. Start recording first.");
         return;
       }
 
       PulseMonitorSettings settings = PreferencesSettingsStore.Load();
-      
-      // Simple validation check before jumping into the exporter
+
       if (string.IsNullOrWhiteSpace(settings.Smtp.Host) || string.IsNullOrWhiteSpace(settings.Smtp.User))
       {
-        await Shell.Current.DisplayAlert("Settings Required", "Please configure your SMTP settings in the Settings page first.", "OK");
+        await MainThread.InvokeOnMainThreadAsync(() =>
+          Application.Current.MainPage.DisplayAlert("Settings Required", "Please configure SMTP in Settings first.", "OK"));
         return;
       }
 
       AddLog("Preparing email export...");
       EmailExporter emailExporter = new(settings.Smtp);
-      string csvPath = await emailExporter.ExportSessionAsync(exportSamples).ConfigureAwait(false);
-      
-      MainThread.BeginInvokeOnMainThread(async () => {
-          await Shell.Current.DisplayAlert("Success", $"Session exported and emailed successfully.\nFile: {Path.GetFileName(csvPath)}", "OK");
-      });
-      
+
+      // Run heavy IO on background thread, never touch UI from here
+      string csvPath = await Task.Run(() =>
+        emailExporter.ExportSessionAsync(exportSamples, CancellationToken.None).GetAwaiter().GetResult());
+
       AddLog($"Session exported and emailed. CSV: {csvPath}");
+      await MainThread.InvokeOnMainThreadAsync(() =>
+        Application.Current.MainPage.DisplayAlert("Success", $"Email sent! File: {Path.GetFileName(csvPath)}", "OK"));
     }
     catch (Exception ex)
     {
-      string error = $"Email export failed: {ex.Message}";
-      AddLog(error);
-      MainThread.BeginInvokeOnMainThread(async () => {
-          await Shell.Current.DisplayAlert("Export Error", ex.Message, "OK");
-      });
+      AddLog($"Email export failed: {ex.Message}");
+      await MainThread.InvokeOnMainThreadAsync(() =>
+        Application.Current.MainPage.DisplayAlert("Export Error", ex.Message, "OK"));
     }
     finally
     {
-      IsBusy = false;
+      // Always reset IsBusy on MainThread
+      MainThread.BeginInvokeOnMainThread(() => IsBusy = false);
     }
   }
   
@@ -548,7 +563,7 @@ public partial class MainViewModel : ObservableObject
   private async Task ExportLocalAsync()
   {
     if (IsBusy) return;
-    IsBusy = true;
+    MainThread.BeginInvokeOnMainThread(() => IsBusy = true);
 
     try
     {
@@ -557,19 +572,21 @@ public partial class MainViewModel : ObservableObject
 
       if (exportSamples.Count == 0)
       {
-        await Shell.Current.DisplayAlert("Export", "No recorded samples available. Please record some data first.", "OK");
+        await MainThread.InvokeOnMainThreadAsync(() =>
+          Application.Current.MainPage.DisplayAlert("Export", "No recorded samples. Record data first.", "OK"));
         AddLog("No recorded samples available. Start recording first.");
         return;
       }
 
-      var result = await SessionExporter.SaveToLocalAsync(_fileSaver, exportSamples).ConfigureAwait(false);
-      
+      // Run file picker on MainThread, then IO on background
+      FileSaverResult result = await MainThread.InvokeOnMainThreadAsync(() =>
+        SessionExporter.SaveToLocalAsync(_fileSaver, exportSamples));
+
       if (result.IsSuccessful)
       {
         AddLog($"Session saved: {result.FilePath}");
-        MainThread.BeginInvokeOnMainThread(async () => {
-            await Shell.Current.DisplayAlert("Success", $"Session saved successfully.\nPath: {result.FilePath}", "OK");
-        });
+        await MainThread.InvokeOnMainThreadAsync(() =>
+          Application.Current.MainPage.DisplayAlert("Success", $"Saved: {result.FilePath}", "OK"));
       }
       else
       {
@@ -578,15 +595,13 @@ public partial class MainViewModel : ObservableObject
     }
     catch (Exception ex)
     {
-      string error = $"Local export failed: {ex.Message}";
-      AddLog(error);
-      MainThread.BeginInvokeOnMainThread(async () => {
-          await Shell.Current.DisplayAlert("Export Error", ex.Message, "OK");
-      });
+      AddLog($"Local export failed: {ex.Message}");
+      await MainThread.InvokeOnMainThreadAsync(() =>
+        Application.Current.MainPage.DisplayAlert("Export Error", ex.Message, "OK"));
     }
     finally
     {
-      IsBusy = false;
+      MainThread.BeginInvokeOnMainThread(() => IsBusy = false);
     }
   }
 
@@ -616,7 +631,7 @@ public partial class MainViewModel : ObservableObject
 
     // Signal processing runs on the WebSocket thread (fast, no UI)
     _rawBuffer.Add(sample);
-    int bpm  = _panTompkinsDetector.Update(sample);
+    int bpm  = _panTompkinsDetector.Update(sample.IR, sample.Timestamp);
     int spO2 = _spO2Calculator.Update(sample);
     _latestBpm = bpm;
     _latestSpO2 = spO2;
@@ -650,7 +665,8 @@ public partial class MainViewModel : ObservableObject
     if (nowMs - Interlocked.Read(ref _lastAiLogMs) >= 1000)
     {
       Interlocked.Exchange(ref _lastAiLogMs, nowMs);
-      AddLog($"AI HRV: SDNN={result.Sdnn:F1}ms RMSSD={result.Rmssd:F1}ms Rhythm={result.Rhythm} Stress={result.StressLevel}");
+      string board = (sender == _ecgReader) ? "ECG" : "PPG";
+      AddLog($"[{board}] AI HRV: SDNN={result.Sdnn:F1}ms RMSSD={result.Rmssd:F1}ms Rhythm={result.Rhythm} Stress={result.StressLevel}");
     }
   }
 

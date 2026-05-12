@@ -77,7 +77,7 @@ public partial class AiDiagnosticsViewModel : ObservableObject
 
   // ---- Frequency spectrum chart -------------------------------------
 
-  public ISeries[] SpectrumSeries { get; }
+  public ObservableCollection<ISeries> SpectrumSeries { get; } = [];
   public Axis[]    SpectrumXAxes  { get; }
   public Axis[]    SpectrumYAxes  { get; }
 
@@ -86,23 +86,22 @@ public partial class AiDiagnosticsViewModel : ObservableObject
 
   public AiDiagnosticsViewModel()
   {
-    SpectrumSeries =
-    [
-      new ColumnSeries<double>
-      {
-        Name   = "LF (0.04–0.15 Hz)",
-        Values = _lfBins,
-        Fill   = new SolidColorPaint(new SKColor(0x00, 0x7A, 0xFF, 0xCC)),
-        Stroke = null
-      },
-      new ColumnSeries<double>
-      {
-        Name   = "HF (0.15–0.40 Hz)",
-        Values = _hfBins,
-        Fill   = new SolidColorPaint(new SKColor(0x30, 0xD1, 0x58, 0xCC)),
-        Stroke = null
-      }
-    ];
+    var lfSeries = new ColumnSeries<double>
+    {
+      Name   = "LF (0.04–0.15 Hz)",
+      Values = _lfBins,
+      Fill   = new SolidColorPaint(new SKColor(0x00, 0x7A, 0xFF, 0xCC)),
+      Stroke = null
+    };
+    var hfSeries = new ColumnSeries<double>
+    {
+      Name   = "HF (0.15–0.40 Hz)",
+      Values = _hfBins,
+      Fill   = new SolidColorPaint(new SKColor(0x30, 0xD1, 0x58, 0xCC)),
+      Stroke = null
+    };
+    SpectrumSeries.Add(lfSeries);
+    SpectrumSeries.Add(hfSeries);
 
     SpectrumXAxes =
     [
@@ -169,8 +168,8 @@ public partial class AiDiagnosticsViewModel : ObservableObject
     }
 
     // We need at least some data to start showing meaningful spectrum
-    // 20 points is about 20 seconds of data, enough for a first look
-    if (_rrHistory.Count < 20)
+    // 4 points is the minimum required by FftProcessor
+    if (_rrHistory.Count < 4)
     {
       return;
     }
@@ -179,17 +178,26 @@ public partial class AiDiagnosticsViewModel : ObservableObject
     List<long> rrCopy;
     lock (_rrHistory) { rrCopy = _rrHistory.ToList(); }
 
-    // Recompute frequency spectrum asynchronously
+    // Recompute frequency spectrum and HRV indices asynchronously
     Task.Run(() =>
     {
       try 
       {
+        // Calculate frequency spectrum
         FrequencySpectrum spectrum = FftProcessor.Compute(rrCopy);
-        MainThread.BeginInvokeOnMainThread(() => UpdateSpectrum(spectrum));
+        
+        // Calculate statistical HRV indices (SDNN, RMSSD) locally
+        HrvMetrics localMetrics = HrvProcessor.Compute(rrCopy);
+
+        MainThread.BeginInvokeOnMainThread(() => 
+        {
+          UpdateSpectrum(spectrum);
+          ApplyHrvValues(localMetrics.Sdnn, localMetrics.Rmssd, localMetrics.Rhythm, localMetrics.StressLevel);
+        });
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine($"HRV FFT Error: {ex.Message}");
+        System.Diagnostics.Debug.WriteLine($"HRV Analysis Error: {ex.Message}");
       }
     });
   }
@@ -225,10 +233,16 @@ public partial class AiDiagnosticsViewModel : ObservableObject
 
   private void UpdateSpectrum(FrequencySpectrum spectrum)
   {
-    _lfBins.Clear();
-    _hfBins.Clear();
-    _lfBins.Add(Math.Round(spectrum.LfPower,  2));
-    _hfBins.Add(Math.Round(spectrum.HfPower,  2));
+    if (_lfBins.Count == 0)
+    {
+      _lfBins.Add(Math.Round(spectrum.LfPower, 2));
+      _hfBins.Add(Math.Round(spectrum.HfPower, 2));
+    }
+    else
+    {
+      _lfBins[0] = Math.Round(spectrum.LfPower, 2);
+      _hfBins[0] = Math.Round(spectrum.HfPower, 2);
+    }
 
     LfPowerText   = $"{spectrum.LfPower:F2} ms²";
     HfPowerText   = $"{spectrum.HfPower:F2} ms²";

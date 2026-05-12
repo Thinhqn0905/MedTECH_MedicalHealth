@@ -82,7 +82,15 @@ public partial class DashboardContentView : ContentView
       }
     }
 
-    if (!hasData) return;
+    if (!hasData)
+    {
+      float baselineY = height / 2f;
+      using SKPath baselinePath = new();
+      baselinePath.MoveTo(0, baselineY);
+      baselinePath.LineTo(width, baselineY);
+      canvas.DrawPath(baselinePath, paint);
+      return;
+    }
 
     // Add padding to min/max
     float range = maxVal - minVal;
@@ -180,6 +188,7 @@ public partial class DashboardContentView : ContentView
     // Find dynamic min/max for auto-scaling
     float minVal = float.MaxValue;
     float maxVal = float.MinValue;
+    bool hasData = false;
 
     for (int i = 0; i < capacity; i++)
     {
@@ -190,12 +199,29 @@ public partial class DashboardContentView : ContentView
       {
         if (ir < minVal) minVal = ir;
         if (ir > maxVal) maxVal = ir;
+        hasData = true;
       }
       if (!float.IsNaN(red) && red != 0)
       {
         if (red < minVal) minVal = red;
         if (red > maxVal) maxVal = red;
+        hasData = true;
       }
+    }
+
+    // If no data yet, draw a flat baseline line (same style as ECG disconnected state)
+    if (!hasData)
+    {
+      float baselineY = height / 2f;
+      using SKPath baselinePath = new();
+      baselinePath.MoveTo(0, baselineY);
+      baselinePath.LineTo(width, baselineY);
+      canvas.DrawPath(baselinePath, irPaint);
+
+      using SKFont font2 = new(SKTypeface.Default, 24);
+      using SKPaint textPaint2 = new() { Color = SKColors.Gray, IsAntialias = true };
+      canvas.DrawText($"FPS: {_fps:F1} | Pts: {capacity}", 10, 30, SKTextAlign.Left, font2, textPaint2);
+      return;
     }
 
     // Add padding to min/max
