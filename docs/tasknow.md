@@ -1,5 +1,96 @@
 # Current Tasks & Progress - PulseMonitor
 
+## Current App Notes - 2026-05-16
+
+### GUI Stream Scaling Plan - Board A PPG + Board B ECG
+
+#### Current problem
+- Both waveform canvases currently use near-pure min/max auto-scale over the visible ring buffer.
+- This makes the chart unstable:
+  - If the signal is very small, noise is stretched to full height and looks like a real waveform.
+  - If one spike/artifact enters the buffer, the real waveform becomes tiny until that spike leaves the window.
+  - The vertical scale can jump frame-to-frame, so the user cannot judge whether the signal is improving or getting worse.
+- For ECG specifically, no-electrode/floating AD8232 output can be auto-stretched into an ECG-like trace. Lead-off should visually dominate this state, not the waveform.
+- For PPG, raw IR/Red values include a large DC baseline plus a small AC pulse. Pure min/max on raw values makes the pulse amplitude depend heavily on finger pressure, LED level, and motion artifacts.
+
+#### Current stream principle
+- **Board A - PPG stream**
+  - Firmware sends waveform packets through BLE characteristic `DE010003`.
+  - Packet format: `[ts:u32][ir:u32][red:u32]`, about 100 samples/sec.
+  - App stores data in `PpgIrBuffer` and `PpgRedBuffer` with 800 points, about 8 seconds at 100Hz.
+  - Metrics such as BPM and SpO2 are sent separately through `DE010004` as JSON.
+  - Display goal: show pulse morphology clearly, not preserve absolute ADC DC level.
+- **Board B - ECG stream**
+  - Firmware sends waveform packets through BLE characteristic `A0000002`.
+  - Packet format: `[seq:u16][sample:i16 x 10]`, 25 packets/sec = 250 samples/sec.
+  - App stores data in `EcgBuffer` with 1250 points, about 5 seconds at 250Hz.
+  - Lead-off status is sent separately through `A0000003`.
+  - Display goal: show ECG morphology consistently, and avoid presenting floating/no-electrode noise as a valid signal.
+
+#### Proposed scaling method
+- Use **hybrid stable scaling**, not pure min/max:
+  1. Preprocess the visible buffer by removing invalid values and ignoring zeros/NaN.
+  2. Compute a robust center:
+     - ECG: center around `0` because firmware/app data is already normalized around baseline.
+     - PPG: center each channel by a rolling mean or median so the chart shows AC pulse, not raw DC level.
+  3. Compute robust amplitude from percentiles, not raw min/max:
+     - Use P5/P95 or P2/P98.
+     - Ignore the most extreme spikes.
+  4. Smooth the display scale with attack/release:
+     - Grow scale quickly when signal gets larger.
+     - Shrink scale slowly so the waveform does not jump.
+  5. Clamp scale to a reasonable min/max:
+     - Prevent tiny noise from becoming full-height.
+     - Prevent real signal from becoming invisible after one artifact.
+
+#### Recommended default scale behavior
+- **ECG default: fixed clinical scale**
+  - Use fixed Y range around zero first, e.g. `-1.5 .. +1.5` normalized units.
+  - Clip samples outside the range instead of rescaling the entire graph.
+  - Add optional gain levels: `0.5x`, `1x`, `2x`, `4x`.
+  - If `IsEcgLeadOff == true`, draw a flat baseline and overlay lead-off status; do not keep drawing incoming waveform as if valid.
+- **ECG debug mode: robust auto**
+  - For debugging only, use percentile scale with smoothing.
+  - Minimum vertical range should be enforced so floating noise stays visibly small.
+- **PPG default: AC-coupled robust auto**
+  - Subtract rolling mean/median from IR and Red before display.
+  - Scale by robust amplitude from recent window, e.g. percentile or RMS-based gain.
+  - Draw IR and Red in the same centered band, or split into two half-height lanes if overlap becomes hard to read.
+  - Keep a minimum amplitude floor so weak noise does not fill the chart.
+- **PPG fallback when no finger / weak signal**
+  - If AC amplitude is below threshold or DC level is too low, show baseline and a subtle "signal weak" state instead of zooming noise.
+
+#### Concrete implementation tasks
+- [ ] Create reusable chart scale helper, e.g. `WaveformScaleState`, with:
+  - `Center`
+  - `HalfRange`
+  - percentile/RMS calculation
+  - min/max clamp
+  - attack/release smoothing
+- [ ] Update ECG canvas:
+  - Default to fixed scale around zero.
+  - Add lead-off visual gate: baseline + overlay when lead-off is active.
+  - Add debug robust-auto option later.
+- [ ] Update PPG canvas:
+  - Display AC-coupled IR/Red, not raw DC values.
+  - Use robust auto-scale with amplitude floor and smoothing.
+  - Consider split lanes if IR/Red overlap makes interpretation difficult.
+- [ ] Add small UI control or setting:
+  - ECG scale: `Fixed 1x`, `Fixed 2x`, `Auto debug`.
+  - PPG scale: `Auto stable`, `Split lanes`.
+
+### Task 2 - BPM / SpO2 display not updating
+- **Observed:** Dashboard cards stay at `--` even when Board A is connected/streaming.
+- **Root cause found in app:** `UpdateVitalsDisplay()` existed but was not called by any timer, so `BpmDisplay` and `SpO2Display` bindings never refreshed.
+- **Second issue found:** Board A firmware sends metrics as JSON on `DE010004`:
+  - `{"ts":...,"bpm":...}`
+  - `{"ts":...,"spo2":...}`
+  App previously parsed only `hrv`, so direct firmware BPM/SpO2 notifications were ignored.
+- **Fix applied:** `MainViewModel` now starts a 10Hz UI vitals timer and subscribes to `BleReader.MetricsReceived` to update `_latestBpm` / `_latestSpO2` from firmware metrics.
+- [ ] Build Android app and verify BPM card updates after heartbeat peaks.
+- [ ] Verify SpO2 card updates after firmware `spo2Calculator.isValid()` becomes true.
+- [ ] If SpO2 still remains `--`, inspect Board A serial logs and verify finger contact/raw Red+IR amplitude.
+
 ## Status: 🟡 ACTIVE (Export & Chart Fixes Applied)
 
 ---

@@ -17,6 +17,11 @@ CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
 CONFIG_ESP_TASK_WDT=n
 CONFIG_ESP_INT_WDT=n
 
+# Log level — suppress verbose IDF logs (GPIO/ADC) during 250Hz sampling
+# Keep MAXIMUM at INFO(3) so boot logs still work; set default to WARN(2) at runtime via code
+CONFIG_LOG_DEFAULT_LEVEL=3
+CONFIG_LOG_MAXIMUM_LEVEL=3
+
 # Flash size
 CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
 CONFIG_ESPTOOLPY_FLASHSIZE="8MB"

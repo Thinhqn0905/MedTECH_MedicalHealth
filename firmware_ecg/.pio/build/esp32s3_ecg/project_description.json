@@ -1,7 +1,7 @@
 {
     "version":            "1",
     "project_name":       "firmware_ecg",
-    "project_version":    "1",
+    "project_version":    "b02e585-dirty",
     "project_path":       "E:/PROJECTS/MedTech_Device/firmware_ecg",
     "idf_path":           "C:/Users/ADMIN/.platformio/packages/framework-espidf",
     "build_dir":          "E:/PROJECTS/MedTech_Device/firmware_ecg/.pio/build/esp32s3_ecg",

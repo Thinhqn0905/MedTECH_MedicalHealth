@@ -1,4 +1,5 @@
 .pio/build/esp32s3/src/main.cpp.o: src/main.cpp \
+ .pio/libdeps/esp32s3/SparkFun\ MAX3010x\ Pulse\ and\ Proximity\ Sensor\ Library/src/MAX30105.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp_arduino_version.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/freertos/include/freertos/FreeRTOS.h \
@@ -179,6 +180,8 @@
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_hw_support/include/soc/esp32/spiram.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
+ C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
  src/ble_manager.h .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLEDevice.h \
  .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig.h \
  .pio/libdeps/esp32s3/NimBLE-Arduino/src/nimconfig_rename.h \
@@ -253,8 +256,4 @@
  .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLE2904.h \
  .pio/libdeps/esp32s3/NimBLE-Arduino/src/NimBLESecurity.h \
  C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/bt/include/esp32c3/include/esp_bt.h \
- src/hrv_analyzer.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
- C:/Users/ADMIN/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
- .pio/libdeps/esp32s3/SparkFun\ MAX3010x\ Pulse\ and\ Proximity\ Sensor\ Library/src/MAX30105.h \
- src/peak_detector.h src/spo2_calculator.h
+ src/hrv_analyzer.h src/peak_detector.h src/spo2_calculator.h

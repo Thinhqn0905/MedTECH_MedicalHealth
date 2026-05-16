@@ -187,12 +187,32 @@ Bảng lệnh dùng trong terminal cho các nhà phát triển:
 ## 📦 Triển khai (Deployment)
 
 ### 1. Triển khai Firmware (Production)
-Khi phần cứng đã hoàn thiện, bạn nạp firmware với cờ release để tối ưu hiệu năng:
+#### Board A — PPG (`firmware/`)
 ```bash
 cd firmware
 pio run -e esp32s3 -t upload
 ```
-*Lưu ý: Firmware đã nạp có thể hoạt động độc lập ngay khi được cấp nguồn bằng Pin.*
+
+#### Board B — ECG (`firmware_ecg/`)
+Nạp firmware ECG qua cổng UART0 (CP2102 — COM7):
+```powershell
+# Dùng PlatformIO CLI (PowerShell)
+& "$env:USERPROFILE\.platformio\penv\Scripts\pio.exe" run -e esp32s3_ecg -t upload
+```
+
+**Cấu hình upload đã thiết lập trong `platformio.ini`:**
+
+| Thông số | Giá trị |
+|:---|:---|
+| Board | ESP32-S3 DevKitC-1 (N8R8) |
+| USB Mode | Hardware CDC and JTAG (`ARDUINO_USB_MODE=1`) |
+| Upload Protocol | `esptool` (UART0 qua CP2102) |
+| Upload Speed | 115200 |
+| Upload Port | COM7 |
+
+> ⚠️ **Lưu ý**: Đảm bảo CP2102 driver đã cài đặt và board kết nối qua COM7. Kiểm tra `Device Manager` nếu cổng COM thay đổi.
+
+*Firmware đã nạp có thể hoạt động độc lập ngay khi được cấp nguồn bằng Pin.*
 
 ### 2. Triển khai Ứng dụng (Android APK)
 Để xuất file APK phát hành cho người dùng Android:

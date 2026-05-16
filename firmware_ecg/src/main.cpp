@@ -18,16 +18,17 @@
 
 #include "af_inference.h"
 #include "ecg_dsp.h"
+#include <esp_log.h>
 
 // ============================================================
 // Pin definitions (Board B — ECG)
 // ============================================================
 namespace {
 // AD8232 connections [VERIFY against actual wiring]
-constexpr uint8_t PIN_ECG_OUTPUT = 4; // ADC1_CH3 on ESP32-S3
-constexpr uint8_t PIN_LO_PLUS = 5;    // Lead-off + detection
-constexpr uint8_t PIN_LO_MINUS = 6;   // Lead-off - detection
-constexpr uint8_t PIN_SDN = 7;        // Shutdown control
+constexpr uint8_t PIN_ECG_OUTPUT = 9; // ADC1_CH3 on ESP32-S3
+constexpr uint8_t PIN_LO_PLUS = 12;   // Lead-off + detection
+constexpr uint8_t PIN_LO_MINUS = 13;  // Lead-off - detection
+constexpr uint8_t PIN_SDN = 11;       // Shutdown control
 
 constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint16_t SAMPLE_RATE_HZ = 250;
@@ -172,10 +173,10 @@ static void setupBLE() {
 // Send batched ECG packet over BLE
 // ============================================================
 #ifndef STREAM_TEST_BUILD
-// BLE status LED (GPIO 48 for WS2812 on DevKitC, but we'll use a simple indicator if possible)
-// Since we don't have a WS2812 library linked, we'll use Serial for now 
-// but add placeholders for LED pins.
-#define PIN_STATUS_LED 48 
+// BLE status LED (GPIO 48 for WS2812 on DevKitC, but we'll use a simple
+// indicator if possible) Since we don't have a WS2812 library linked, we'll use
+// Serial for now but add placeholders for LED pins.
+#define PIN_STATUS_LED 48
 
 static void updateBleStatus() {
   if (g_bleConnected) {
@@ -223,7 +224,8 @@ static void checkLeadOff() {
     else if (loMinus)
       status = 0x02;
 
-    Serial.printf("LO+:%d, LO-:%d -> Status:0x%02X\n", (int)loPlus, (int)loMinus, status);
+    Serial.printf("LO+:%d, LO-:%d -> Status:0x%02X\n", (int)loPlus,
+                  (int)loMinus, status);
     g_pLeadOffChar->setValue(&status, 1);
     if (g_bleConnected) {
       g_pLeadOffChar->notify();
@@ -242,6 +244,13 @@ void setup() {
   Serial.begin(115200);
   Serial.setRxBufferSize(16384); // Large buffer for 10KB windows
   delay(1000);                   // Wait for USB CDC to enumerate
+
+  // Suppress GPIO/ADC INFO spam from analogRead() at 250 Hz
+  esp_log_level_set("gpio", ESP_LOG_WARN);
+  esp_log_level_set("adc", ESP_LOG_WARN);
+  esp_log_level_set("adc_oneshot", ESP_LOG_WARN);
+  esp_log_level_set("efuse", ESP_LOG_WARN);
+
   Serial.println("\n\n=== BOARD IS ALIVE ===");
 
 #ifdef STREAM_TEST_BUILD

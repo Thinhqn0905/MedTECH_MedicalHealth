@@ -46,6 +46,7 @@ public partial class MainViewModel : ObservableObject
   private readonly IServiceProvider _serviceProvider;
   private readonly IFileSaver _fileSaver;
   private readonly IDispatcherTimer? _sessionTimer;
+  private readonly IDispatcherTimer? _vitalsTimer;
   private readonly Stopwatch _sessionStopwatch = new();
   private readonly AiDiagnosticsViewModel _aiDiagnosticsViewModel;
 
@@ -95,6 +96,14 @@ public partial class MainViewModel : ObservableObject
           SessionTimerText = FormatElapsed(_sessionStopwatch.Elapsed);
         }
       };
+    }
+
+    _vitalsTimer = Application.Current?.Dispatcher.CreateTimer();
+    if (_vitalsTimer is not null)
+    {
+      _vitalsTimer.Interval = TimeSpan.FromMilliseconds(100);
+      _vitalsTimer.Tick += (_, _) => UpdateVitalsDisplay();
+      _vitalsTimer.Start();
     }
 
     AddLog("PulseMonitor initialized.");
@@ -270,7 +279,9 @@ public partial class MainViewModel : ObservableObject
 #endif
 
       _connectionManager = new ConnectionManager(settings.Hardware);
-      _reader = new BleReader(settings.Hardware.BleDeviceName);
+      var ppgReader = new BleReader(settings.Hardware.BleDeviceName);
+      ppgReader.MetricsReceived += OnPpgMetricsReceived;
+      _reader = ppgReader;
 
       _reader.RawSampleReceived     += OnRawSampleReceived;
       _reader.ConnectionStateChanged += OnConnectionStateChanged;
@@ -681,6 +692,52 @@ public partial class MainViewModel : ObservableObject
     });
   }
 
+  private void OnPpgMetricsReceived(object? sender, string json)
+  {
+    try
+    {
+      using var doc = System.Text.Json.JsonDocument.Parse(json);
+      var root = doc.RootElement;
+
+      if (root.TryGetProperty("bpm", out var bpmElement) &&
+          TryReadPositiveInt(bpmElement, out int bpm))
+      {
+        _latestBpm = bpm;
+      }
+
+      if (root.TryGetProperty("spo2", out var spo2Element) &&
+          TryReadPositiveInt(spo2Element, out int spo2))
+      {
+        _latestSpO2 = spo2;
+      }
+    }
+    catch (Exception ex)
+    {
+      Debug.WriteLine($"[PPG] Metrics parse failed: {ex.Message}");
+    }
+  }
+
+  private static bool TryReadPositiveInt(System.Text.Json.JsonElement element, out int value)
+  {
+    value = 0;
+
+    if (element.ValueKind != System.Text.Json.JsonValueKind.Number)
+    {
+      return false;
+    }
+
+    if (element.TryGetInt32(out int intValue))
+    {
+      value = intValue;
+    }
+    else if (element.TryGetDouble(out double doubleValue))
+    {
+      value = (int)Math.Round(doubleValue);
+    }
+
+    return value > 0;
+  }
+
   // ════════════════════════════════════════════════════════════
   //  UI DATA UDPATES
   // ════════════════════════════════════════════════════════════
@@ -786,6 +843,11 @@ public partial class MainViewModel : ObservableObject
   {
     if (_reader is not null)
     {
+      if (_reader is BleReader bleReader)
+      {
+        bleReader.MetricsReceived -= OnPpgMetricsReceived;
+      }
+
       _reader.RawSampleReceived     -= OnRawSampleReceived;
       _reader.ConnectionStateChanged -= OnConnectionStateChanged;
       _reader.AiDiagnosticReceived  -= OnAiDiagnosticReceived;
