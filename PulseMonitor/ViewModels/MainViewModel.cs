@@ -31,6 +31,7 @@ public partial class MainViewModel : ObservableObject
   private readonly PanTompkinsDetector _panTompkinsDetector = new();
   private readonly PanTompkinsDetector _ecgPanTompkinsDetector = new();
   private readonly SpO2Calculator _spO2Calculator = new();
+  private readonly PpgMetricsProcessor _ppgMetricsProcessor = new();
   private readonly List<string> _boardALogs = new();
   private readonly List<string> _boardBLogs = new();
   private DateTime _lastLogTimeA = DateTime.MinValue;
@@ -72,6 +73,10 @@ public partial class MainViewModel : ObservableObject
   private long _rawSampleCount;
   private long _lastAiLogMs;
   private long _lastPerfLogMs;
+  private long _lastPpgMetricLogMs;
+  private long _lastPpgRawLogMs;
+  private long _lastPpgRrFeedMs;
+  private long _lastPpgRrLogMs;
   private int _lastDisplayedBpm = int.MinValue;
   private int _lastDisplayedSpO2 = int.MinValue;
   private int _lastStyledBpm = int.MinValue;
@@ -285,13 +290,11 @@ public partial class MainViewModel : ObservableObject
 
       _reader.RawSampleReceived     += OnRawSampleReceived;
       _reader.ConnectionStateChanged += OnConnectionStateChanged;
-      _reader.AiDiagnosticReceived  += OnAiDiagnosticReceived;
       _reader.DiagnosticLog         += (s, msg) => AddBoardLog(0, msg);
 
       using CancellationTokenSource cts = new();
       cts.CancelAfter(TimeSpan.FromSeconds(15));
       
-      _reader.DiagnosticLog         += (s, msg) => AddBoardLog(0, msg);
       await _reader.StartAsync(cts.Token).ConfigureAwait(false);
 
       MainThread.BeginInvokeOnMainThread(() =>
@@ -642,16 +645,26 @@ public partial class MainViewModel : ObservableObject
 
     // Signal processing runs on the WebSocket thread (fast, no UI)
     _rawBuffer.Add(sample);
-    int bpm  = _panTompkinsDetector.Update(sample.IR, sample.Timestamp);
-    int spO2 = _spO2Calculator.Update(sample);
-    _latestBpm = bpm;
-    _latestSpO2 = spO2;
-
-    // RR intervals for AI diagnostics (background computation)
-    if (_panTompkinsDetector.HasNewPeak)
+    PpgMetrics metrics = _ppgMetricsProcessor.Update(sample);
+    int bpm = metrics.Bpm;
+    int spO2 = metrics.SpO2;
+    if (bpm > 0)
     {
-      _aiDiagnosticsViewModel.OnRrInterval(_panTompkinsDetector.LastRrMs);
+      _latestBpm = bpm;
     }
+
+    if (spO2 > 0)
+    {
+      _latestSpO2 = spO2;
+    }
+
+    if (bpm > 0 || spO2 > 0)
+    {
+      LogPpgMetric($"[PPG] Derived BPM={_latestBpm} SpO2={_latestSpO2}%");
+    }
+
+    FeedPpgDiagnostics(metrics);
+    LogPpgRaw(sample);
 
     // Recording buffer (background, lock-protected)
     if (_isRecording)
@@ -669,6 +682,11 @@ public partial class MainViewModel : ObservableObject
 
   private void OnAiDiagnosticReceived(object? sender, AiDiagnosticResult result)
   {
+    if (sender != _ecgReader)
+    {
+      return;
+    }
+
     _aiDiagnosticsViewModel.UpdateFromFirmwareResult(result);
 
     // Throttle UI log noise from high-frequency AI packets to keep rendering smooth.
@@ -703,18 +721,70 @@ public partial class MainViewModel : ObservableObject
           TryReadPositiveInt(bpmElement, out int bpm))
       {
         _latestBpm = bpm;
+        LogPpgMetric($"[PPG] BPM metric: {bpm}");
+        MainThread.BeginInvokeOnMainThread(UpdateVitalsDisplay);
       }
 
       if (root.TryGetProperty("spo2", out var spo2Element) &&
           TryReadPositiveInt(spo2Element, out int spo2))
       {
         _latestSpO2 = spo2;
+        LogPpgMetric($"[PPG] SpO2 metric: {spo2}%");
+        MainThread.BeginInvokeOnMainThread(UpdateVitalsDisplay);
       }
     }
     catch (Exception ex)
     {
       Debug.WriteLine($"[PPG] Metrics parse failed: {ex.Message}");
     }
+  }
+
+  private void LogPpgMetric(string message)
+  {
+    long nowMs = Environment.TickCount64;
+    if (nowMs - Interlocked.Read(ref _lastPpgMetricLogMs) < 1000)
+    {
+      return;
+    }
+
+    Interlocked.Exchange(ref _lastPpgMetricLogMs, nowMs);
+    AddBoardLog(0, message);
+  }
+
+  private void FeedPpgDiagnostics(PpgMetrics metrics)
+  {
+    if (metrics.RrMs < 350 || metrics.RrMs > 1300)
+    {
+      return;
+    }
+
+    long nowMs = Environment.TickCount64;
+    long minGapMs = Math.Clamp((long)(metrics.RrMs * 0.85), 300, 1500);
+    if (nowMs - Interlocked.Read(ref _lastPpgRrFeedMs) < minGapMs)
+    {
+      return;
+    }
+
+    Interlocked.Exchange(ref _lastPpgRrFeedMs, nowMs);
+    _aiDiagnosticsViewModel.OnRrInterval(metrics.RrMs);
+
+    if (nowMs - Interlocked.Read(ref _lastPpgRrLogMs) >= 3000)
+    {
+      Interlocked.Exchange(ref _lastPpgRrLogMs, nowMs);
+      AddBoardLog(0, $"[PPG] HRV RR={metrics.RrMs}ms from BPM={metrics.Bpm}");
+    }
+  }
+
+  private void LogPpgRaw(IRSample sample)
+  {
+    long nowMs = Environment.TickCount64;
+    if (nowMs - Interlocked.Read(ref _lastPpgRawLogMs) < 2000)
+    {
+      return;
+    }
+
+    Interlocked.Exchange(ref _lastPpgRawLogMs, nowMs);
+    AddBoardLog(0, $"[PPG] Raw IR={sample.IR} Red={sample.Red} BPM={_latestBpm} SpO2={_latestSpO2} {_ppgMetricsProcessor.LastDebug}");
   }
 
   private static bool TryReadPositiveInt(System.Text.Json.JsonElement element, out int value)

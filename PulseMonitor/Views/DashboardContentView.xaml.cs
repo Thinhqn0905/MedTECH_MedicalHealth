@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using PulseMonitor.Config;
 using PulseMonitor.ViewModels;
 using SkiaSharp;
 using SkiaSharp.Views.Maui;
@@ -11,10 +12,11 @@ public partial class DashboardContentView : ContentView
   private Stopwatch _fpsStopwatch = new();
   private int _frameCount = 0;
   private double _fps = 0;
-  
-  // Fake data generator for emulator testing
-  private float _fakePhase = 0;
-  private float _fakePpgPhase = 0;
+  private long _lastDisplaySettingsReadMs;
+  private float _ecgDisplayGain = 3f;
+  private readonly WaveformScaleState _ppgScale = new(minHalfRange: 180f, maxHalfRange: 12000f);
+  private readonly List<float> _scaleScratch = new(1800);
+  private const float EcgFixedHalfRange = 1.5f;
 
   public DashboardContentView()
   {
@@ -35,14 +37,6 @@ public partial class DashboardContentView : ContentView
     }
   }
 
-  private void GenerateFakeEcgDataForEmulator()
-  {
-  }
-
-  private void GenerateFakePpgDataForEmulator()
-  {
-  }
-
   private void OnPaintSurface(object sender, SKPaintSurfaceEventArgs e)
   {
     SKImageInfo info = e.Info;
@@ -52,8 +46,8 @@ public partial class DashboardContentView : ContentView
     canvas.Clear(SKColors.White);
 
     if (BindingContext is not MainViewModel vm) return;
+    RefreshDisplaySettings();
 
-    // Draw ECG path
     using SKPaint paint = new()
     {
       Style = SKPaintStyle.Stroke,
@@ -66,41 +60,19 @@ public partial class DashboardContentView : ContentView
     int head = vm.EcgHead;
     float width = info.Width;
     float height = info.Height;
-    // Find dynamic min/max for auto-scaling
-    float minVal = float.MaxValue;
-    float maxVal = float.MinValue;
-    bool hasData = false;
 
-    for (int i = 0; i < capacity; i++)
+    if (vm.IsEcgLeadOff)
     {
-      float val = vm.EcgBuffer[i];
-      if (!float.IsNaN(val))
-      {
-        if (val < minVal) minVal = val;
-        if (val > maxVal) maxVal = val;
-        hasData = true;
-      }
-    }
-
-    if (!hasData)
-    {
-      float baselineY = height / 2f;
-      using SKPath baselinePath = new();
-      baselinePath.MoveTo(0, baselineY);
-      baselinePath.LineTo(width, baselineY);
-      canvas.DrawPath(baselinePath, paint);
+      DrawBaseline(canvas, width, height / 2f, paint);
+      DrawDebugText(canvas, capacity);
       return;
     }
 
-    // Add padding to min/max
-    float range = maxVal - minVal;
-    if (range < 0.001f) range = 0.001f;
-    minVal -= range * 0.1f;
-    maxVal += range * 0.1f;
-    range = maxVal - minVal;
-
     using SKPath path = new();
     bool isFirst = true;
+    bool hasData = false;
+    float baselineY = height / 2f;
+    float amplitudePx = height * 0.42f;
 
     lock (vm.EcgLock)
     {
@@ -112,8 +84,10 @@ public partial class DashboardContentView : ContentView
 
         if (!float.IsNaN(val))
         {
+          hasData = true;
           float x = (i / (float)capacity) * width;
-          float y = height - ((val - minVal) / range) * height;
+          float clipped = Math.Clamp(val * _ecgDisplayGain, -EcgFixedHalfRange, EcgFixedHalfRange);
+          float y = baselineY - (clipped / EcgFixedHalfRange) * amplitudePx;
 
           if (isFirst)
           {
@@ -132,25 +106,16 @@ public partial class DashboardContentView : ContentView
       }
     }
 
-    canvas.DrawPath(path, paint);
-
-    // Calculate FPS
-    _frameCount++;
-    if (_fpsStopwatch.ElapsedMilliseconds > 1000)
+    if (!hasData)
     {
-      _fps = _frameCount / (_fpsStopwatch.ElapsedMilliseconds / 1000.0);
-      _frameCount = 0;
-      _fpsStopwatch.Restart();
+      DrawBaseline(canvas, width, baselineY, paint);
+      DrawDebugText(canvas, capacity);
+      return;
     }
 
-    // Draw Benchmark Text
-    using SKFont font = new(SKTypeface.Default, 24);
-    using SKPaint textPaint = new()
-    {
-      Color = SKColors.Gray,
-      IsAntialias = true
-    };
-    canvas.DrawText($"FPS: {_fps:F1} | Pts: {capacity}", 10, 30, SKTextAlign.Left, font, textPaint);
+    DrawBaseline(canvas, width, baselineY, paint, alpha: 45);
+    canvas.DrawPath(path, paint);
+    DrawDebugText(canvas, capacity);
   }
 
   private void OnPaintPpgSurface(object sender, SKPaintSurfaceEventArgs e)
@@ -185,10 +150,10 @@ public partial class DashboardContentView : ContentView
     float width = info.Width;
     float height = info.Height;
 
-    // Find dynamic min/max for auto-scaling
-    float minVal = float.MaxValue;
-    float maxVal = float.MinValue;
-    bool hasData = false;
+    double irSum = 0;
+    double redSum = 0;
+    int irCount = 0;
+    int redCount = 0;
 
     for (int i = 0; i < capacity; i++)
     {
@@ -197,39 +162,43 @@ public partial class DashboardContentView : ContentView
       
       if (!float.IsNaN(ir) && ir != 0)
       {
-        if (ir < minVal) minVal = ir;
-        if (ir > maxVal) maxVal = ir;
-        hasData = true;
+        irSum += ir;
+        irCount++;
       }
+
       if (!float.IsNaN(red) && red != 0)
       {
-        if (red < minVal) minVal = red;
-        if (red > maxVal) maxVal = red;
-        hasData = true;
+        redSum += red;
+        redCount++;
       }
     }
 
-    // If no data yet, draw a flat baseline line (same style as ECG disconnected state)
-    if (!hasData)
+    if (irCount == 0 && redCount == 0)
     {
       float baselineY = height / 2f;
-      using SKPath baselinePath = new();
-      baselinePath.MoveTo(0, baselineY);
-      baselinePath.LineTo(width, baselineY);
-      canvas.DrawPath(baselinePath, irPaint);
-
-      using SKFont font2 = new(SKTypeface.Default, 24);
-      using SKPaint textPaint2 = new() { Color = SKColors.Gray, IsAntialias = true };
-      canvas.DrawText($"FPS: {_fps:F1} | Pts: {capacity}", 10, 30, SKTextAlign.Left, font2, textPaint2);
+      DrawBaseline(canvas, width, baselineY, irPaint);
+      DrawDebugText(canvas, capacity);
       return;
     }
 
-    // Add padding to min/max
-    float range = maxVal - minVal;
-    if (range < 1) range = 1;
-    minVal -= range * 0.1f;
-    maxVal += range * 0.1f;
-    range = maxVal - minVal;
+    float irCenter = irCount > 0 ? (float)(irSum / irCount) : 0f;
+    float redCenter = redCount > 0 ? (float)(redSum / redCount) : 0f;
+
+    _scaleScratch.Clear();
+    for (int i = 0; i < capacity; i++)
+    {
+      float ir = vm.PpgIrBuffer[i];
+      float red = vm.PpgRedBuffer[i];
+
+      if (!float.IsNaN(ir) && ir != 0) _scaleScratch.Add(ir - irCenter);
+      if (!float.IsNaN(red) && red != 0) _scaleScratch.Add(red - redCenter);
+    }
+    _ppgScale.UpdateFromCenteredValues(_scaleScratch);
+
+    float halfRange = _ppgScale.HalfRange;
+    float irBaselineY = height * 0.32f;
+    float redBaselineY = height * 0.72f;
+    float laneAmplitudePx = height * 0.20f;
 
     using SKPath irPath = new();
     using SKPath redPath = new();
@@ -247,23 +216,53 @@ public partial class DashboardContentView : ContentView
 
       if (!float.IsNaN(ir) && ir != 0)
       {
-        float y = height - ((ir - minVal) / range) * height;
+        float centered = Math.Clamp(ir - irCenter, -halfRange, halfRange);
+        float y = irBaselineY - (centered / halfRange) * laneAmplitudePx;
         if (isFirstIr) { irPath.MoveTo(x, y); isFirstIr = false; }
         else irPath.LineTo(x, y);
       }
 
       if (!float.IsNaN(red) && red != 0)
       {
-        float y = height - ((red - minVal) / range) * height;
+        float centered = Math.Clamp(red - redCenter, -halfRange, halfRange);
+        float y = redBaselineY - (centered / halfRange) * laneAmplitudePx;
         if (isFirstRed) { redPath.MoveTo(x, y); isFirstRed = false; }
         else redPath.LineTo(x, y);
       }
     }
 
+    DrawBaseline(canvas, width, irBaselineY, irPaint, alpha: 45);
+    DrawBaseline(canvas, width, redBaselineY, redPaint, alpha: 65);
     canvas.DrawPath(irPath, irPaint);
     canvas.DrawPath(redPath, redPaint);
+    DrawLaneLabel(canvas, "IR", 10, irBaselineY - laneAmplitudePx - 4, irPaint.Color);
+    DrawLaneLabel(canvas, "RED", 10, redBaselineY - laneAmplitudePx - 4, redPaint.Color);
+    DrawDebugText(canvas, capacity);
+  }
 
-    // Draw Benchmark Text
+  private void RefreshDisplaySettings()
+  {
+    long nowMs = Environment.TickCount64;
+    if (nowMs - _lastDisplaySettingsReadMs < 1000)
+    {
+      return;
+    }
+
+    _lastDisplaySettingsReadMs = nowMs;
+    double gain = PreferencesSettingsStore.Load().Hardware.EcgDisplayGain;
+    _ecgDisplayGain = (float)Math.Clamp(gain, 0.5, 10.0);
+  }
+
+  private void DrawDebugText(SKCanvas canvas, int capacity)
+  {
+    _frameCount++;
+    if (_fpsStopwatch.ElapsedMilliseconds > 1000)
+    {
+      _fps = _frameCount / (_fpsStopwatch.ElapsedMilliseconds / 1000.0);
+      _frameCount = 0;
+      _fpsStopwatch.Restart();
+    }
+
     using SKFont font = new(SKTypeface.Default, 24);
     using SKPaint textPaint = new()
     {
@@ -271,5 +270,28 @@ public partial class DashboardContentView : ContentView
       IsAntialias = true
     };
     canvas.DrawText($"FPS: {_fps:F1} | Pts: {capacity}", 10, 30, SKTextAlign.Left, font, textPaint);
+  }
+
+  private static void DrawBaseline(SKCanvas canvas, float width, float y, SKPaint sourcePaint, byte alpha = 120)
+  {
+    using SKPaint baselinePaint = new()
+    {
+      Style = SKPaintStyle.Stroke,
+      Color = sourcePaint.Color.WithAlpha(alpha),
+      StrokeWidth = 1,
+      IsAntialias = true
+    };
+    canvas.DrawLine(0, y, width, y, baselinePaint);
+  }
+
+  private static void DrawLaneLabel(SKCanvas canvas, string label, float x, float y, SKColor color)
+  {
+    using SKFont font = new(SKTypeface.Default, 18);
+    using SKPaint paint = new()
+    {
+      Color = color.WithAlpha(180),
+      IsAntialias = true
+    };
+    canvas.DrawText(label, x, y, SKTextAlign.Left, font, paint);
   }
 }

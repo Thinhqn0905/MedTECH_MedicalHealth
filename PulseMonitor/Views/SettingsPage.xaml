@@ -30,6 +30,11 @@
 
           <Label Text="Serial Baud" />
           <Entry Text="{Binding SerialBaud}" Keyboard="Numeric" />
+
+          <Label Text="{Binding EcgDisplayGain, StringFormat='ECG Display Gain: {0:F1}x'}" />
+          <Slider Minimum="0.5"
+                  Maximum="10"
+                  Value="{Binding EcgDisplayGain}" />
         </VerticalStackLayout>
       </Border>
 

@@ -18,7 +18,7 @@
 |:---:|:---:|
 | ![Dashboard](./docs/images/real_dashboard.png) | ![AI Diagnostics](./docs/images/real_ai_diagnostics.png) |
 | **PPG Waveform** | **ECG Waveform** |
-| ![PPG](./docs/images/PPG.jpg) | ![ECG Waveform](./docs/images/ecg_image.png) |
+| ![PPG](./docs/images/PPG.jpg) | ![ECG Waveform](./docs/images/ecg_image.jpg) |
 | **Edge AI Inference Results** | **HRV Frequency Analysis** |
 | ![AI Result](./docs/images/ai_diagnostics.png) | ![Spectrum](./docs/images/hrv_spectrum.png) |
 

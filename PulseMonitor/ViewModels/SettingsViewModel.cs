@@ -22,6 +22,9 @@ public partial class SettingsViewModel : ObservableObject
   private int _serialBaud = 115200;
 
   [ObservableProperty]
+  private double _ecgDisplayGain = 3.0;
+
+  [ObservableProperty]
   private string _smtpHost = string.Empty;
 
   [ObservableProperty]
@@ -58,7 +61,8 @@ public partial class SettingsViewModel : ObservableObject
         SerialPort = SerialPort,
         BaudRate = SerialBaud,
         WebSocketUri = WifiUri,
-        BleDeviceName = BleDeviceName
+        BleDeviceName = BleDeviceName,
+        EcgDisplayGain = Math.Clamp(EcgDisplayGain, 0.5, 10.0)
       },
       Smtp = new SmtpSettings
       {
@@ -98,6 +102,7 @@ public partial class SettingsViewModel : ObservableObject
     ConnectionMode = settings.Hardware.ConnectionMode;
     SerialPort = settings.Hardware.SerialPort;
     SerialBaud = settings.Hardware.BaudRate;
+    EcgDisplayGain = Math.Clamp(settings.Hardware.EcgDisplayGain, 0.5, 10.0);
 
     SmtpHost = settings.Smtp.Host;
     SmtpPort = settings.Smtp.Port;

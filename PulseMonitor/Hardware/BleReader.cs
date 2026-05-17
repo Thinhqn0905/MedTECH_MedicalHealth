@@ -181,11 +181,6 @@ public sealed class BleReader : IBleReader
     }
   }
 
-  // DC Removal Filters
-  private double _irBaseline = 0;
-  private double _redBaseline = 0;
-  private const double DC_ALPHA = 0.05; // Fast enough to track wander, slow enough to keep pulse
-
   private DateTime _lastWfLog = DateTime.MinValue;
   private int _wfPacketCount = 0;
 
@@ -209,20 +204,7 @@ public sealed class BleReader : IBleReader
       uint ir  = BitConverter.ToUInt32(data, 4);
       uint red = BitConverter.ToUInt32(data, 8);
 
-      // Initialize baseline on first sample
-      if (_irBaseline == 0) _irBaseline = ir;
-      if (_redBaseline == 0) _redBaseline = red;
-
-      // Apply low-pass filter to track baseline
-      _irBaseline += DC_ALPHA * (ir - _irBaseline);
-      _redBaseline += DC_ALPHA * (red - _redBaseline);
-
-      // Subtract baseline to get zero-centered AC signal (Pulse)
-      // Add a constant offset (2000) to prevent underflow since IRSample expects uint
-      uint irAc = (uint)Math.Max(0, (ir - _irBaseline) + 2000);
-      uint redAc = (uint)Math.Max(0, (red - _redBaseline) + 2000);
-
-      RawSampleReceived?.Invoke(this, new IRSample((long)ts, irAc, redAc));
+      RawSampleReceived?.Invoke(this, new IRSample((long)ts, ir, red));
     }
   }
 
@@ -242,7 +224,13 @@ public sealed class BleReader : IBleReader
       {
         float sdnn = hrvObj.GetProperty("sdnn").GetSingle();
         float rmssd = hrvObj.GetProperty("rmssd").GetSingle();
-        // Since firmware doesn't send Rhythm/Stress yet, we mock them or leave empty
+
+        if (sdnn < 0 || sdnn > 220 || rmssd < 0 || rmssd > 260)
+        {
+          DiagnosticLog?.Invoke(this, $"[PPG] Ignored noisy HRV: SDNN={sdnn:F1}, RMSSD={rmssd:F1}");
+          return;
+        }
+
         var result = new AiDiagnosticResult(ts, sdnn, rmssd, "Normal", 0);
         AiDiagnosticReceived?.Invoke(this, result);
       }

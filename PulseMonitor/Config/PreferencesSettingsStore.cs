@@ -17,6 +17,7 @@ public static class PreferencesSettingsStore
   private const string SerialPortKey = "serial_port";
   private const string SerialBaudKey = "serial_baud";
   private const string ConnectionModeKey = "connection_mode";
+  private const string EcgDisplayGainKey = "ecg_display_gain";
 
   public static PulseMonitorSettings Load()
   {
@@ -30,7 +31,8 @@ public static class PreferencesSettingsStore
         SerialPort = Preferences.Get(SerialPortKey, defaults.Hardware.SerialPort),
         BaudRate = Preferences.Get(SerialBaudKey, defaults.Hardware.BaudRate),
         WebSocketUri = Preferences.Get(WifiUriKey, defaults.Hardware.WebSocketUri),
-        BleDeviceName = Preferences.Get(BleDeviceNameKey, defaults.Hardware.BleDeviceName)
+        BleDeviceName = Preferences.Get(BleDeviceNameKey, defaults.Hardware.BleDeviceName),
+        EcgDisplayGain = Preferences.Get(EcgDisplayGainKey, defaults.Hardware.EcgDisplayGain)
       },
       Smtp = new SmtpSettings
       {
@@ -51,6 +53,7 @@ public static class PreferencesSettingsStore
     Preferences.Set(SerialBaudKey, settings.Hardware.BaudRate);
     Preferences.Set(WifiUriKey, settings.Hardware.WebSocketUri);
     Preferences.Set(BleDeviceNameKey, settings.Hardware.BleDeviceName);
+    Preferences.Set(EcgDisplayGainKey, Math.Clamp(settings.Hardware.EcgDisplayGain, 0.5, 10.0));
 
     Preferences.Set(SmtpHostKey, settings.Smtp.Host);
     Preferences.Set(SmtpPortKey, settings.Smtp.Port);
@@ -107,6 +110,10 @@ public static class PreferencesSettingsStore
         settings.Hardware.BleDeviceName = hardware.TryGetProperty("BleDeviceName", out JsonElement bleName)
           ? bleName.GetString() ?? settings.Hardware.BleDeviceName
           : settings.Hardware.BleDeviceName;
+
+        settings.Hardware.EcgDisplayGain = hardware.TryGetProperty("EcgDisplayGain", out JsonElement ecgGain)
+          ? Math.Clamp(ecgGain.GetDouble(), 0.5, 10.0)
+          : settings.Hardware.EcgDisplayGain;
       }
 
       if (doc.RootElement.TryGetProperty("Smtp", out JsonElement smtp))

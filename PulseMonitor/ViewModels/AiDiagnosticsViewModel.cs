@@ -127,6 +127,18 @@ public partial class AiDiagnosticsViewModel : ObservableObject
 
   public void UpdateFromFirmwareResult(AiDiagnosticResult result)
   {
+    if (!IsPlausibleHrv(result.Sdnn, result.Rmssd))
+    {
+      MainThread.BeginInvokeOnMainThread(() =>
+      {
+        RhythmLabel = "Signal unstable";
+        RhythmColor = "#FF9500";
+        RhythmIcon = "!";
+        LastUpdateText = $"Updated {DateTime.Now:HH:mm:ss}";
+      });
+      return;
+    }
+
     MainThread.BeginInvokeOnMainThread(() =>
     {
       ApplyHrvValues(result.Sdnn, result.Rmssd, result.Rhythm, result.StressLevel);
@@ -160,6 +172,11 @@ public partial class AiDiagnosticsViewModel : ObservableObject
   {
     lock (_rrHistory)
     {
+      if (!IsPlausibleRr(rrMs, _rrHistory))
+      {
+        return;
+      }
+
       _rrHistory.Add(rrMs);
       if (_rrHistory.Count > MaxRrHistory)
       {
@@ -193,6 +210,7 @@ public partial class AiDiagnosticsViewModel : ObservableObject
         {
           UpdateSpectrum(spectrum);
           ApplyHrvValues(localMetrics.Sdnn, localMetrics.Rmssd, localMetrics.Rhythm, localMetrics.StressLevel);
+          LastUpdateText = $"Updated {DateTime.Now:HH:mm:ss}";
         });
       }
       catch (Exception ex)
@@ -229,6 +247,36 @@ public partial class AiDiagnosticsViewModel : ObservableObject
       3 => ("Very High Stress", "#FF3B30"),
       _ => ("No Data",          "#8E9BB0")
     };
+  }
+
+  private static bool IsPlausibleHrv(float sdnn, float rmssd)
+  {
+    return sdnn >= 0 && sdnn <= 220 && rmssd >= 0 && rmssd <= 260;
+  }
+
+  private static bool IsPlausibleRr(long rrMs, List<long> rrHistory)
+  {
+    if (rrMs < 350 || rrMs > 1300)
+    {
+      return false;
+    }
+
+    if (rrHistory.Count < 4)
+    {
+      return true;
+    }
+
+    int count = Math.Min(8, rrHistory.Count);
+    List<long> recent = rrHistory.Skip(rrHistory.Count - count).Take(count).ToList();
+    recent.Sort();
+    long median = recent[recent.Count / 2];
+    if (median <= 0)
+    {
+      return true;
+    }
+
+    double relativeJump = Math.Abs(rrMs - median) / (double)median;
+    return relativeJump <= 0.35;
   }
 
   private void UpdateSpectrum(FrequencySpectrum spectrum)

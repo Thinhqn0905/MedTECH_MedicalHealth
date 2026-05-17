@@ -13,6 +13,7 @@ public sealed class HardwareSettings
   public int BaudRate { get; set; } = 115200;
   public string WebSocketUri { get; set; } = "ws://192.168.4.1:8080";
   public string BleDeviceName { get; set; } = "PulseMonitor";
+  public double EcgDisplayGain { get; set; } = 3.0;
 }
 
 public sealed class SmtpSettings
