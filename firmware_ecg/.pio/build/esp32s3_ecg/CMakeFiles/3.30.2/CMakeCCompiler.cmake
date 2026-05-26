@@ -1,4 +1,4 @@
-set(CMAKE_C_COMPILER "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe")
+set(CMAKE_C_COMPILER "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc.exe")
 set(CMAKE_C_COMPILER_ARG1 "")
 set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_C_COMPILER_VERSION "8.4.0")
@@ -22,11 +22,11 @@ set(CMAKE_C_SIMULATE_VERSION "")
 
 
 
-set(CMAKE_AR "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ar.exe")
-set(CMAKE_C_COMPILER_AR "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc-ar.exe")
-set(CMAKE_RANLIB "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ranlib.exe")
-set(CMAKE_C_COMPILER_RANLIB "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc-ranlib.exe")
-set(CMAKE_LINKER "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ld.exe")
+set(CMAKE_AR "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ar.exe")
+set(CMAKE_C_COMPILER_AR "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc-ar.exe")
+set(CMAKE_RANLIB "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ranlib.exe")
+set(CMAKE_C_COMPILER_RANLIB "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-gcc-ranlib.exe")
+set(CMAKE_LINKER "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-ld.exe")
 set(CMAKE_LINKER_LINK "")
 set(CMAKE_LINKER_LLD "")
 set(CMAKE_C_COMPILER_LINKER "NOTFOUND")
@@ -75,7 +75,7 @@ endif()
 
 
 
-set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/include;C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/include-fixed;C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/sys-include;C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/include")
+set(CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/include;C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/include-fixed;C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/sys-include;C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/include")
 set(CMAKE_C_IMPLICIT_LINK_LIBRARIES "gcc;c;nosys;c;gcc")
-set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0;C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc;C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/lib")
+set(CMAKE_C_IMPLICIT_LINK_DIRECTORIES "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0;C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc;C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/lib")
 set(CMAKE_C_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")

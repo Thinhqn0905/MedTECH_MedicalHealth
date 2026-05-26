@@ -1,4 +1,4 @@
-# Install script for directory: E:/PROJECTS/MedTech_Device/firmware_ecg
+# Install script for directory: F:/MedTECH_MedicalHealth/firmware_ecg
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -34,12 +34,12 @@ endif()
 
 # Set path to fallback-tool for dependency-resolution.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "C:/Users/ADMIN/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-objdump.exe")
+  set(CMAKE_OBJDUMP "C:/Users/vung/.platformio/packages/toolchain-xtensa-esp32s3/bin/xtensa-esp32s3-elf-objdump.exe")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("E:/PROJECTS/MedTech_Device/firmware_ecg/.pio/build/esp32s3_ecg/esp-idf/cmake_install.cmake")
+  include("F:/MedTECH_MedicalHealth/firmware_ecg/.pio/build/esp32s3_ecg/esp-idf/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -57,6 +57,6 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-  file(WRITE "E:/PROJECTS/MedTech_Device/firmware_ecg/.pio/build/esp32s3_ecg/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "F:/MedTECH_MedicalHealth/firmware_ecg/.pio/build/esp32s3_ecg/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
