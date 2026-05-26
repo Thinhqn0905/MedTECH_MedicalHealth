@@ -5,8 +5,6 @@ public sealed class PulseMonitorSettings
   public HardwareSettings Hardware { get; set; } = new();
   public SmtpSettings Smtp { get; set; } = new();
 }
-
-
 public sealed class HardwareSettings
 {
   public string ConnectionMode { get; set; } = "Ble";
