@@ -1,6 +1,6 @@
 #include "ble_manager.h"
 #include <Arduino.h>
-
+// Updated by YSinh
 // Mirroring Board B's UUID Pattern
 #define PPG_SERVICE_UUID   "DE010001-0000-1000-8000-00805F9B34FB"
 #define WAVEFORM_CHAR_UUID "DE010003-0000-1000-8000-00805F9B34FB"
