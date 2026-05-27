@@ -1,4 +1,4 @@
-/* * Data converted from E:\PROJECTS\MedTech_Device\firmware_ecg\.pio\build\esp32s3_ecg\x509_crt_bundle
+/* * Data converted from F:\MedTECH_MedicalHealth\firmware_ecg\.pio\build\esp32s3_ecg\x509_crt_bundle
  */
 .data
 .section .rodata.embedded
